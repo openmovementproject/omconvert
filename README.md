@@ -5,7 +5,7 @@ A pre-built binary for Windows is available at: [OpenMovement GitHub](https://gi
 On Linux or Mac (*XCode* required), you can use this single line command to build an `omconvert` binary in the current directory:
 
 ```bash
-mkdir omconvert.build; curl https://openlab.ncl.ac.uk/gitlab/dan.jackson/omconvert/repository/archive.tar.gz?ref=master | tar xvz -C omconvert.build --strip-components=1 && make -C omconvert.build/src/omconvert && cp omconvert.build/src/omconvert/omconvert .
+mkdir omconvert.build && curl -L https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build/master.zip && unzip omconvert.build/master.zip -d omconvert.build && make -C omconvert.build/omconvert-master/src/omconvert && cp omconvert.build/omconvert-master/src/omconvert/omconvert .
 ```
 
 For full help showing all of the algorithm command-line parameters, use the parameter `--help`.  Note that there is a default `-calibrate 1` option for auto-calibration. 
@@ -190,7 +190,7 @@ Where `-interpolate-mode 1` selectes nearest-neighbour, `2` for linear interpola
 
 For details of the .WAV file the metadata output, see: [omconvert technical details](src/omconvert/README.md).
 
-If you have multiple devices on the same body over a significant time, you may also be interested in [timesync](https://openlab.ncl.ac.uk/gitlab/dan.jackson/timesync/blob/master/README.md), which will synchronize data collected from multiple devices.
+If you have multiple devices on the same body over a significant time, you may also be interested in [timesync](https://github.com/digitalinteraction/timesync/), which will synchronize data collected from multiple devices.
 
 You may convert the data to a .CSV file (note that the output may be very large):
 
