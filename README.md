@@ -149,7 +149,10 @@ omconvert datafile.cwa -resample 30 -interpolate-mode 1 -counts-epoch 1 -counts-
 
 Where the `-counts-epoch` is in seconds.  The standard output is a simple .CSV file with the counts for the x/y/z axes, but you can also use the option `-csv-format:ag` to create an output file compatible with "ActiGraph(tm) ActiLife" software, and `-csv-format:agdt` to create an output file compatible with "ActiGraph(tm) ActiLife Data Table format".
 
-Alternatively, you could export a .CWA file at 30Hz in a .CSV file with a header that makes it compatible with "ActiGraph(tm) ActiLife" software, then use that software to calculate the counts.
+
+## AG Raw
+
+You can export a .CWA file at 30Hz in a .CSV file with a header that makes it compatible with "ActiGraph(tm) ActiLife" software, then use that software to calculate the counts.
 
 ```bash
 omconvert datafile.cwa -resample 30 -interpolate-mode 1 -csv-format:ag -csv-file datafile.ag.csv
