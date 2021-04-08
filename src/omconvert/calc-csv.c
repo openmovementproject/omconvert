@@ -42,6 +42,7 @@
 
 
 #define AXES 3
+#define MAX_TIME_STRING 80 // 26
 
 
 // Load data
@@ -199,7 +200,7 @@ bool CsvAddValue(csv_status_t *status, double* accel, double temp, bool valid)
 		if (timestamp)
 		{
 			// Report SVM epoch
-			char timestring[24];	// 2000-01-01 12:00:00.000\0
+			char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 
 			time_t tn = (time_t)t;
 			struct tm *tmn = gmtime(&tn);

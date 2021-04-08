@@ -31,7 +31,7 @@
 Cut-point calculation
 "Validation of the GENEA Accelerometer" by Esliger et al.
 
-  SVMgs = SUM(abs(sqrt(x^2 + y^2 + z^2) – 1))
+  SVMgs = SUM(abs(sqrt(x^2 + y^2 + z^2) ï¿½ 1))
 
 Where sum is for 60 seconds at 80Hz, so divide all cut-points below by 4800 to work on mean SVM-1
 
@@ -41,7 +41,7 @@ Light   	>= 1.5 METS	< 4 METS	 386	 386	 217	  77
 Moderate	>= 4.0 METS	< 7 METS	 542	 440	 645	 220	
 Vigorous	>= 7.0 METS	        	1811	2099	1811	2057	
 
-// Original SVMgs = SUM(abs(sqrt(x ^ 2 + y ^ 2 + z ^ 2) – 1)) at 80Hz (from "Validation of the GENEA Accelerometer" by Esliger et al.) so these cut-points * 1/(60*80) for average SVM
+// Original SVMgs = SUM(abs(sqrt(x ^ 2 + y ^ 2 + z ^ 2) ï¿½ 1)) at 80Hz (from "Validation of the GENEA Accelerometer" by Esliger et al.) so these cut-points * 1/(60*80) for average SVM
 // Sedentary, Light (>= 1.5 METS, < 4 METS), Moderate (>= 4 METS, < 7 METS), Vigorous (>= 7 METS)
 
 'wrist':                386/80/60 542/80/60 1811/80/60
@@ -133,6 +133,7 @@ const double paeeCutPointWristL[] = { 217.0 * PAEE_NORMALIZE_80Hz, 645.0 * PAEE_
 const double paeeCutPointWaist[]  = {  77.0 * PAEE_NORMALIZE_80Hz, 220.0 * PAEE_NORMALIZE_80Hz, 2057.0 * PAEE_NORMALIZE_80Hz, 0 };
 
 #define AXES 3
+#define MAX_TIME_STRING 80 // 26
 
 
 // Load data
@@ -223,7 +224,7 @@ void PaeePrint(paee_status_t *status)
 	int c;
 	if (status->file != NULL)
 	{
-		char timestring[24];	// 2000-01-01 12:00:00.000\0
+		char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 
 		time_t tn = (time_t)status->epochStartTime;
 		struct tm *tmn = gmtime(&tn);

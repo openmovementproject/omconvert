@@ -98,6 +98,8 @@ Note: Paper does not specify precision -- assuming doubles (rather than, e.g., a
 
 #include "calc-step.h"
 
+#define MAX_TIME_STRING 80 // 26
+
 
 // Load data
 char StepInit(step_status_t *status, step_configuration_t *configuration)
@@ -147,7 +149,7 @@ static void StepPrint(step_status_t *status)
 {
 	if (status->file != NULL)
 	{
-		char timestring[24];	// 2000-01-01 12:00:00.000\0
+		char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 		time_t tn = (time_t)status->epochStartTime;
 		struct tm *tmn = gmtime(&tn);
 		float sec = tmn->tm_sec + (float)(status->epochStartTime - (time_t)status->epochStartTime);

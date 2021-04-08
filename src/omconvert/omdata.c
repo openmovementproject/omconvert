@@ -39,8 +39,9 @@
 	#define timegm _mkgmtime
 	#include <io.h>
 #elif !defined(__APPLE__)
-	#define _BSD_SOURCE		// Both of these lines
-	#include <features.h>	// ...needed for timegm() in time.h on Linux
+	#define _BSD_SOURCE 	// This line (deprecated)...
+	#define _DEFAULT_SOURCE // ...or this line...
+	#include <features.h>	// ...and this line, are needed for timegm() in time.h on Linux
 #endif
 
 #include <stdlib.h>
@@ -920,16 +921,16 @@ fprintf(stderr, "OMDATA: ...OK (%d)\n", s);
 #endif
 
 		// Data
-		char format = -1;
+		//char format = -1;
 		char streamIndex = -1;
 		if ((p[0] == 'A' || p[0] == 'G' || p[0] == 'M') && p[1] == 'X')			// CWA Data
 		{
-			format = 0;
+			//format = 0;
 			streamIndex = p[0] - 'A' + 'a';
 		}
 		else if (p[0] == 'd')										// OMX Data
 		{
-			format = 1;
+			//format = 1;
 			streamIndex = p[1];
 		}
 
@@ -1527,7 +1528,7 @@ char OmDataGetValues(omdata_t *data, omdata_segment_t *seg, int sampleIndex, int
 			}
 			else if (seg->description.packing == FILESTREAM_PACKING_SPECIAL_DWORD3_10_2 && seg->description.channels == 3)
 			{
-				int bytesPerSample = 4;
+				//int bytesPerSample = 4;
 				const uint32_t *pp = (const uint32_t *)(p + seg->description.offset + (seg->description.pitch * sampleWithinSector));
 				uint32_t value = *pp;
 				unsigned char e = (unsigned char)(value >> 30);		// 3=16g, 2=8g, 1=4g, 0=2g

@@ -54,6 +54,7 @@ or if the value range, for at least two out of three axes, was less than 50 mg.
 
 
 #define AXES 3
+#define MAX_TIME_STRING 80 // 26
 
 
 // Load data
@@ -112,7 +113,7 @@ void WtvPrint(wtv_status_t *status)
 {
 	if (status->file != NULL)
 	{
-		char timestring[24];	// 2000-01-01 12:00:00.000\0
+		char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 
 		time_t tn = (time_t)status->epochStartTime;
 		struct tm *tmn = gmtime(&tn);

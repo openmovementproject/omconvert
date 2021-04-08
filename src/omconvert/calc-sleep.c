@@ -66,7 +66,7 @@ Algorithm:
 #define MIN_LENGTH (600 / EPOCH)	// Minimum length in epochs (600 * 1-second epochs)
 
 
-#define MAX_TIME_STRING 26
+#define MAX_TIME_STRING 80 // 26
 static const char *TimeString(char timeCsv, double t, char *buff)
 {
 	static char staticBuffer[MAX_TIME_STRING] = { 0 };	// 2000-01-01 20:00:00.000|

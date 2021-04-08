@@ -58,6 +58,8 @@
 // Coefficients are derived from best fit (1st order Butterworth was tried with cut-offs 0.29 and 1.66, but not accurate enough)
 #include "agcoefficients.h"     // AgN, AgB, AgA, etc...
 
+#define MAX_TIME_STRING 80 // 26
+
 /*
 Summary:
 Step 1. Each axis is treated separately:
@@ -139,12 +141,11 @@ char AgFilterInit(agfilter_status_t *status, agfilter_configuration_t *configura
 	return 1; // (status->file != NULL) ? 1 : 0;
 }
 
-
 static void AgFilterPrint(agfilter_status_t *status)
 {
 	if (status->file != NULL)
 	{
-		char timestring[24];	// 2000-01-01 12:00:00.000\0
+		char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 
 		time_t tn = (time_t)status->epochStartTime;
 		struct tm *tmn = gmtime(&tn);

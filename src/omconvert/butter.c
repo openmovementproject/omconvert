@@ -196,8 +196,8 @@ int CoefficientsButterworth(int order, double W1, double W2, double *B, double *
 		double c2t = 2.0 * cos(theta) * cos(theta) - 1.0;
 
 		// Trinomials
-		double c[BUTTERWORTH_MAX_ORDER * 2];
-		double b[BUTTERWORTH_MAX_ORDER * 2];
+		double c[BUTTERWORTH_MAX_ORDER * 2] = {0};
+		double b[BUTTERWORTH_MAX_ORDER * 2] = {0};
 		for (i = 0; i < order; i++)
 		{
 			double parg = M_PI * (double)(2 * i + 1) / (double)(2 * order);

@@ -40,9 +40,13 @@
 	#define _CRT_NONSTDC_NO_WARNINGS // strdup
 	#define timegm _mkgmtime
 	#define strcasecmp _stricmp
-#elif !defined(__APPLE__)
-	#define _BSD_SOURCE		// Both of these lines
-	#include <features.h>	// ...needed for timegm() in time.h on Linux
+	#define USE_FTIME
+#elif defined(__APPLE__)
+	#define USE_FTIME		// Remove if deprecated and don't need backwards-compatibility
+#else
+	#define _BSD_SOURCE 	// This line (deprecated)...
+	#define _DEFAULT_SOURCE // ...or this line...
+	#include <features.h>	// ...and this line, are needed for timegm() in time.h on Linux
 #endif
 
 #include <stdlib.h>
@@ -50,15 +54,19 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
-#include <sys/timeb.h>
-
 #include "omconvert.h"
 #include "exits.h"
 #include "omdata.h"
 #include "omcalibrate.h"
 #include "wav.h"
 
+#ifdef USE_FTIME
+#include <sys/timeb.h>
+#endif
+
 #define CONVERT_VERSION 1
+
+#define MAX_TIME_STRING 80 // 26
 
 // Calculations
 #include "calc-csv.h"
@@ -608,12 +616,17 @@ double InterpolatorValue(interpolator_t *interpolator, int subchannel, char *val
 // Returns the number of seconds since the epoch
 double TimeNow()
 {
+#ifdef USE_FTIME
 	struct timeb tp;
 	ftime(&tp);
 	return ((unsigned long long)tp.time * 1000 + tp.millitm) / 1000.0;
+#else
+	struct timespec tp;
+	if (clock_gettime(CLOCK_REALTIME, &tp) == -1) return 0;
+	return (double)tp.tv_sec + (tp.tv_nsec / 1000000000.0);
+#endif
 }
 
-#define MAX_TIME_STRING 26
 const char *TimeString(double t, char *buff)
 {
 	static char staticBuffer[MAX_TIME_STRING] = { 0 };	// 2000-01-01 20:00:00.000|
@@ -1214,7 +1227,7 @@ int OmConvertRunConvert(omconvert_settings_t *settings, calc_t *calc)
 			int i;
 			for (i = 0; i < stationaryPoints->numValues; i++)
 			{
-				char timestring[24];	// 2000-01-01 12:00:00.000\0
+				char timestring[MAX_TIME_STRING];	// 2000-01-01 12:00:00.000\0
 				time_t tn = (time_t)stationaryPoints->values[i].time;
 				struct tm *tmn = gmtime(&tn);
 				float sec = tmn->tm_sec + (float)(stationaryPoints->values[i].time - (time_t)stationaryPoints->values[i].time);
