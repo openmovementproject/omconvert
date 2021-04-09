@@ -57,6 +57,48 @@ or if the value range, for at least two out of three axes, was less than 50 mg.
 #define MAX_TIME_STRING 80 // 26
 
 
+#ifdef USE_RUNNINGSTATS
+// Option: reduce loss of precision for running stats (informed by: https://www.johndcook.com/blog/standard_deviation/)
+void running_stats_clear(running_stats_t *self) {
+	self->n = 0;
+}
+void running_stats_add(running_stats_t *self, double x) {
+	self->n++;
+	if (self->n == 1) {
+		self->newM = x;
+		self->newS = 0;
+		self->min = x;
+		self->max = x;
+	} else {
+		self->newM = self->oldM + (x - self->oldM) / self->n;
+		self->newS = self->oldS + (x - self->oldM) * (x - self->newM);
+	}
+	if (x < self->min) self->min = x;
+	if (x > self->max) self->max = x;
+	self->oldM = self->newM;
+    self->oldS = self->newS;
+}
+int running_stats_count(running_stats_t *self) {
+	return self->n;
+}
+double running_stats_mean(running_stats_t *self) {
+	if (self->n == 0) return 0;
+	return self->newM;
+}
+double running_stats_variance(running_stats_t *self) {
+	if (self->n <= 1) return 0;
+	return self->newS / (self->n - 1);
+}
+double running_stats_stddev(running_stats_t *self) {
+	return sqrt(running_stats_variance(self));
+}
+double running_stats_range(running_stats_t *self) {
+	if (self->n == 0) return 0;
+	return self->max - self->min;
+}
+#endif
+
+
 // Load data
 char WtvInit(wtv_status_t *status, wtv_configuration_t *configuration)
 {
@@ -98,10 +140,14 @@ char WtvInit(wtv_status_t *status, wtv_configuration_t *configuration)
 	int c;
 	for (c = 0; c < AXES; c++) 
 	{ 
+#ifdef USE_RUNNINGSTATS
+		running_stats_clear(&status->runningStats[c]);
+#else
 		status->axisSum[c] = 0; 
 		status->axisSumSquared[c] = 0; 
 		status->axisMax[c] = 0;
 		status->axisMin[c] = 0;
+#endif
 	}
 	status->sample = 0;
 
@@ -136,10 +182,15 @@ bool WtvAddValue(wtv_status_t *status, double* accel, double temp, bool valid)
 		status->epochStartTime = status->configuration->startTime + (status->sample / status->configuration->sampleRate);
 		for (c = 0; c < AXES; c++)
 		{
+#ifdef USE_RUNNINGSTATS
+			running_stats_clear(&status->runningStats[c]);
+#else
 			status->axisSum[c] = 0;
 			status->axisSumSquared[c] = 0;
 			status->axisMax[c] = accel[c];
 			status->axisMin[c] = accel[c];
+#endif
+			status->intervalSample = 0;
 		}
 	}
 
@@ -163,10 +214,14 @@ bool WtvAddValue(wtv_status_t *status, double* accel, double temp, bool valid)
 		for (c = 0; c < AXES; c++)
 		{
 			double v = accel[c];
+#ifdef USE_RUNNINGSTATS
+			running_stats_add(&status->runningStats[c], v);
+#else
 			status->axisSum[c] += v;
 			status->axisSumSquared[c] += v * v;
 			if (status->intervalSample == 0 || accel[c] < status->axisMin[c]) { status->axisMin[c] = accel[c]; }
 			if (status->intervalSample == 0 || accel[c] > status->axisMax[c]) { status->axisMax[c] = accel[c]; }
+#endif
 		}
 		status->intervalSample++;
 	}
@@ -185,12 +240,17 @@ bool WtvAddValue(wtv_status_t *status, double* accel, double temp, bool valid)
 		double range[AXES];
 		for (c = 0; c < AXES; c++)
 		{
+#ifdef USE_RUNNINGSTATS
+			stddev[c] = running_stats_stddev(&status->runningStats[c]);
+			range[c] = running_stats_range(&status->runningStats[c]);
+#else
 			double mean = status->intervalSample == 0 ? 0 : status->axisSum[c] / status->intervalSample;
 			double squareOfMean = mean * mean;
 			double averageOfSquares = status->intervalSample == 0 ? 0 : (status->axisSumSquared[c] / status->intervalSample);
 			double standardDeviation = sqrt(averageOfSquares - squareOfMean);
 			stddev[c] = standardDeviation;
 			range[c] = status->axisMax[c] - status->axisMin[c];
+#endif
 		}
 
 		// Determine if the StdDev or range is low on each axis

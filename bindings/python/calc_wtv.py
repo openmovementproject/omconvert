@@ -11,6 +11,57 @@ WTV_RANGE_CUTOFF = 0.050
 WTV_RANGE_MIN_AXES = 2
 
 
+
+# Informed by: https://www.johndcook.com/blog/standard_deviation/
+class RunningStats:
+    def __init__(self):
+        self.clear()
+
+    def clear(self):
+        self.n = 0
+
+    def add(self, x):
+        self.n += 1
+        if self.n == 1:
+            self.newM = x
+            self.newS = 0
+            self.min = x
+            self.max = x
+        else:
+            self.newM = self.oldM + (x - self.oldM) / self.n
+            self.newS = self.oldS + (x - self.oldM) * (x - self.newM)
+            if (x < self.min):
+                self.min = x
+            if (x > self.max):
+                self.max = x
+        self.oldM = self.newM
+        self.oldS = self.newS
+
+    def count(self):
+        return self.n
+
+    def mean(self):
+        if self.n > 0:
+            return self.newM
+        else:
+            return 0
+
+    def variance(self):
+        if self.n > 1:
+            return self.newS / (self.n - 1)
+        else:
+            return 0
+    
+    def stddev(self):
+        return sqrt(self.variance())
+
+    def range(self):
+        if self.n > 0:
+            return self.max - self.min
+        else:
+            return 0
+
+
 class CalcWtv:
     """
     An iterator to calculate the Wear-Time Validation (30-minute epochs) for a given iterator yielding [time_seconds, x, y, z].
@@ -39,10 +90,13 @@ class CalcWtv:
         self.current_epoch_time = None
 
         self.count = 0
-        self.axisSum = [0] * WTV_NUM_AXES
-        self.axisSumSquared = [0] * WTV_NUM_AXES
-        self.axisMax = [0] * WTV_NUM_AXES
-        self.axisMin = [0] * WTV_NUM_AXES
+        #self.axisSum = [0] * WTV_NUM_AXES
+        #self.axisSumSquared = [0] * WTV_NUM_AXES
+        #self.axisMax = [0] * WTV_NUM_AXES
+        #self.axisMin = [0] * WTV_NUM_AXES
+        self.runningStats = []
+        for axis in range(0, WTV_NUM_AXES):
+            self.runningStats.append(RunningStats())
 
 
     # Iterate on self
@@ -79,11 +133,17 @@ class CalcWtv:
                     count_stddev_low = 0
                     count_range_low = 0
                     for axis in range(0, WTV_NUM_AXES):
-                        mean = self.axisSum[axis] / self.count
-                        squareOfMean = mean * mean
-                        averageOfSquares = self.axisSumSquared[axis] / self.count
-                        stddev = sqrt(averageOfSquares - squareOfMean)
-                        value_range = self.axisMax[axis] - self.axisMin[axis]
+
+                        # Naive standard deviation 
+                        #stddev = sqrt((self.axisSumSquared[axis] / self.count) - ((self.axisSum[axis] / self.count) ** 2))
+                        #value_range = self.axisMax[axis] - self.axisMin[axis]
+
+                        # Use the running stats version and ignore the naive variance 
+                        stddev = self.runningStats[axis].stddev()
+                        value_range = self.runningStats[axis].range()
+                        
+                        #import datetime
+                        #print('@' + datetime.datetime.fromtimestamp(self.current_epoch_time, tz=datetime.timezone.utc).isoformat(sep=' ')[0:19] + '/' + str(axis) + ' -- stddev=' + str(stddev) + ' -- running_stddev=' + str(running_stddev) + ' -- range=' + str(value_range))
 
                         if stddev < WTV_STD_CUTOFF:
                             count_stddev_low += 1
@@ -102,10 +162,11 @@ class CalcWtv:
                 # Start new epoch
                 self.count = 0
                 for axis in range(0, WTV_NUM_AXES):
-                    self.axisSum[axis] = 0
-                    self.axisSumSquared[axis] = 0
-                    self.axisMax[axis] = 0
-                    self.axisMin[axis] = 0
+                    #self.axisSum[axis] = 0
+                    #self.axisSumSquared[axis] = 0
+                    #self.axisMax[axis] = 0
+                    #self.axisMin[axis] = 0
+                    self.runningStats[axis].clear()
                 self.current_epoch_id = next_epoch_id
                 self.current_epoch_time = next_epoch_time
 
@@ -113,12 +174,11 @@ class CalcWtv:
             if time is not None:
                 for axis in range(0, WTV_NUM_AXES):
                     value = values[axis + 1]
-                    self.axisSum[axis] += value
-                    self.axisSumSquared[axis] += value * value
-                    if self.count == 0 or value < self.axisMin[axis]:
-                        self.axisMin[axis] = value
-                    if self.count == 0 or value > self.axisMax[axis]:
-                        self.axisMax[axis] = value
+                    #self.axisSum[axis] += value
+                    #self.axisSumSquared[axis] += value * value
+                    #if self.count == 0 or value < self.axisMin[axis]: self.axisMin[axis] = value
+                    #if self.count == 0 or value > self.axisMax[axis]: self.axisMax[axis] = value
+                    self.runningStats[axis].add(value)
                 self.count += 1
 
             # Return result

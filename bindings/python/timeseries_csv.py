@@ -53,13 +53,12 @@ def csv_datetime_string(time, with_milliseconds):
 
 class TimeseriesCsv:
     """
-    Load a .CSV file.
+    Open a .CSV file as iterable over each row.
     The first row can contain column headers.
-    If the first data column contains an ISO-ish timestamp with no offset, it is parsed as a time in seconds since the 1970 epoch date
-    -- importantly, no timezone information is known, so treat as a UTC time to correctly recover date/time of day.
-    All other values must be double-parsable.
-    Each row is returned as a double array of the same length as the first data row in the file.
-    The result is a tuple of the header cells, and a list of rows.
+    The first column must contain a timestamp.  If the timestamp is numeric, the 'time_zero' option may be added.  
+    If the timestamp is an ISO-ish date/time, it is parsed as a time in seconds since the 1970 epoch date.
+    In either case, no timezone information is known, so treat as a UTC time to correctly recover date/time of day.
+    All other values must be numeric (a global scaling factor may be applied to these).
     """
     def __init__(self, csv_filename, options = {}):
         self.options = options

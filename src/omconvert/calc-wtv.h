@@ -35,6 +35,8 @@
 //#include <stdlib.h>
 #include <stdio.h>
 
+// Option for slightly more numerically stable std-dev computation
+#define USE_RUNNINGSTATS
 
 // WTV configuration
 typedef struct
@@ -50,6 +52,12 @@ typedef struct
 	double wtvRangeCutoff;	// or, non-wear if range < 50 mg (for at least 2 out of the 3 axes)
 } wtv_configuration_t;
 
+#ifdef USE_RUNNINGSTATS
+typedef struct {
+	int n;
+	double newM, newS, oldM, oldS, min, max;
+} running_stats_t;
+#endif
 
 // WTV status
 typedef struct
@@ -63,11 +71,15 @@ typedef struct
 	int intervalSample;		// Valid samples within this interval
 	int halfHourEpochs;		// Number of 30-minute epochs to summarize over
 
+#ifdef USE_RUNNINGSTATS
+	running_stats_t runningStats[3];
+#else
 	// StdDev & range
 	double axisSum[3];
 	double axisSumSquared[3];
 	double axisMin[3];
 	double axisMax[3];
+#endif
 
 	int numWindows;			// Number of 30-minute windows assessed
 	int totalWorn;			// Count of windows that the device was worn
