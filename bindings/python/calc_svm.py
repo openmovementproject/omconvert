@@ -2,7 +2,9 @@ from math import sqrt
 
 class CalcSvm:
     """
-    Calculate the SVM value for the given iterator yielding [time_seconds, x, y, z].
+    An iterator to calculate the SVM value for a given iterator yielding [time_seconds, x, y, z].
+    options['epoch_size'] # seconds per epoch
+    options['alignment']  # offset to align epoch; None=align to start of data; 0=align to wall-clock time
     """
 
     def __init__(self, input, options):
@@ -13,14 +15,15 @@ class CalcSvm:
         self.epoch_size = self.options.get('epoch_size', 60)
 
         # Epoch alignment offset, e.g. 0=Align epochs since start; None=Align from start of data
-        self.alignment = self.options.get('alignment', 0)
+        self.alignment = self.options.get('alignment', None)
 
         self.current_epoch_id = None
         self.current_epoch_time = None
+        self.ended = False
+
+        # Status
         self.count = 0
         self.sum = 0
-
-        self.ended = False
 
 
     # Iterate on self
@@ -45,7 +48,7 @@ class CalcSvm:
             next_epoch_time = None
             if time is not None:
                 next_epoch_id = (time + self.alignment) // self.epoch_size
-                next_epoch_time = (next_epoch_id * self.epoch_size) + self.alignment
+                next_epoch_time = (next_epoch_id * self.epoch_size) - self.alignment
 
             # If the epoch has changed, emit the previous result
             result = None
@@ -61,7 +64,7 @@ class CalcSvm:
 
             # Calculate SVM and add to current epoch
             if time is not None:
-                en = sqrt(x * x) + (y * y) + (z * z)
+                en = sqrt((x * x) + (y * y) + (z * z))
                 enmo = en - 1
                 svm = abs(enmo)
                 self.sum += svm
@@ -73,7 +76,4 @@ class CalcSvm:
             
             if time is None:
                 raise StopIteration
-
-
-
 

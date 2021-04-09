@@ -8,7 +8,7 @@ This processes .CWA and .OMX files, and can perform some operations on triaxial 
 * Signal Vector Magnitude/Euclidean Norm Minus One
 
 * "PAEE" cut-points categorizing epochs into a physical activity level.  A free choice of cut-points can be made, for example, levels from: 
-  * Eslinger, D. W., Rowlands, A. V., Hurst, T. L., Catt, M., Murray, P., & Eston, R. G. (2011). Validation of the GENEA Accelerometer.
+  * Esliger, D. W., Rowlands, A. V., Hurst, T. L., Catt, M., Murray, P., & Eston, R. G. (2011). Validation of the GENEA Accelerometer.
   * Dillon, C. B., Fitzgerald, A. P., Kearney, P. M., Perry, I. J., Rennie, K. L., Kozarski, R., & Phillips, C. M. (2016). Number of days required to estimate habitual activity using wrist-worn GENEActiv accelerometer: a cross-sectional study. PloS one, 11(5), e0109913.
   * Powell, C., Carson, B. P., Dowd, K. P., & Donnelly, A. E. (2017). Simultaneous validation of five activity monitors for use in adult populations. Scandinavian journal of medicine & science in sports, 27(12), 1881-1892.
 
