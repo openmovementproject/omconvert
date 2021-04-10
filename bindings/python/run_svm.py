@@ -2,13 +2,20 @@ import os
 import timeseries_csv
 from calc_svm import CalcSvm
 
-def run_svm(source_file):
+def run_svm(source_file, test_load_everything=False):
     output_file = os.path.splitext(source_file)[0] + '.csvm.csv'
 
-    tscsv = timeseries_csv.TimeseriesCsv(source_file, {
-        "time_zero": timeseries_csv.csv_time_from_filename(source_file), 
-        "global_scale": timeseries_csv.csv_scale_from_filename(source_file)
-    })
+    # (Experimental) Only use this option for scaled triaxial values with full timestamps
+    if test_load_everything:
+        import numpy as np
+        data = timeseries_csv.csv_load_pandas(source_file)
+        tscsv = iter(data)
+    else:
+        # Use the CSV iterator with automatic time-offset/scaling
+        tscsv = timeseries_csv.TimeseriesCsv(source_file, {
+            "time_zero": timeseries_csv.csv_time_from_filename(source_file), 
+            "global_scale": timeseries_csv.csv_scale_from_filename(source_file)
+        })
     #print(tscsv.header)
     svm_calc = CalcSvm(tscsv, {})
     

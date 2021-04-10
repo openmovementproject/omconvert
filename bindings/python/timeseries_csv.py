@@ -51,6 +51,48 @@ def csv_datetime_string(time, with_milliseconds):
         return time.isoformat(sep=' ')[0:19]
 
 
+
+def csv_load_numpy(filename):
+    """Use numpy to load ISO-timestamped x/y/z data"""
+    import numpy as np
+    return np.loadtxt(
+        filename, 
+        delimiter=',', 
+        skiprows=1,
+        usecols=(0,1,2,3),
+        # dtype={
+        #     'names': ('timestamp', 'x', 'y', 'z'),
+        #     'formats': ['f8', 'f8', 'f8', 'f8'],    # 'datetime64[us]'
+        # }, 
+        converters={
+            0: lambda value: np.datetime64(value, 'ms').astype('int64') / 1000  # Seconds since epoch
+            # 0: lambda value: np.datetime64(value, 'ms')
+            # 0: lambda value: datetime.datetime.fromisoformat(value.decode("utf-8") + '+00:00').timestamp()
+            # 0: lambda value: np.datetime64(datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')))
+        },
+    )
+
+
+def csv_load_pandas(filename):
+    """Use pandas to load ISO-timestamped x/y/z data"""
+    import pandas as pd
+    pd_data = pd.read_csv(
+        filename, 
+        parse_dates=[0], 
+        infer_datetime_format=True, 
+        #date_parser = lambda value: datetime.datetime.strptime(value, "%Y-%m-%d %H:%M:%S.%f").timestamp(),
+        #date_parser = lambda value: np.datetime64(value, 'ms').astype('int64') / 1000,  # Seconds since epoch
+        sep=',', 
+        usecols=[0,1,2,3],
+    )
+    # Use time since epoch in seconds
+    pd_data.iloc[:,0] = pd.to_numeric(pd_data.iloc[:,0]) / 1e9
+    return pd_data.values
+    #return np.array(pd_data)
+
+
+
+
 class TimeseriesCsv:
     """
     Open a .CSV file as iterable over each row.
