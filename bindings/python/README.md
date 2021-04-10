@@ -11,6 +11,8 @@ This is a Python wrapper for the `omconvert` binary, and Python implementations 
 
 The example code exports the SVM and WTV files.
 
+*IMPORTANT:* You will need the `omconvert` binary either in your `PATH`, in the current working directory, or in the same directory as the `omconvert.py` file (or, on Windows, if you have *OmGui* installed in the default location).  On macOS/Linux you can use the `build-omconvert.sh` script to build a binary; or see [omconvert](https://github.com/digitalinteraction/omconvert#open-movement-file-converter) for build instructions.
+
 
 ## Iterable time series CSV loader
 
