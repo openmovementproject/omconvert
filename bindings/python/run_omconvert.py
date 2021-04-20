@@ -1,3 +1,6 @@
+#import sys
+#sys.path.append("../../bindings/python")
+
 import os
 import omconvert
 
