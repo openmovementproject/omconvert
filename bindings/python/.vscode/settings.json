@@ -1,10 +1,12 @@
 {
     "cSpell.words": [
+        "AAAGGGLLLLLLLLLL",
         "Acti",
         "Activ",
         "Arvidsson",
         "Borazio",
         "Brønd",
+        "DWORD",
         "Dowd",
         "ENMO",
         "Esliger",
@@ -16,6 +18,7 @@
         "Kyung",
         "Kücükyildiz",
         "Laerhoven",
+        "MMDDDD",
         "PAEE",
         "Rennie",
         "Renstr",
@@ -23,18 +26,26 @@
         "Schaefer",
         "Scholl",
         "Verisense",
+        "YYYYYYMM",
         "astype",
         "csvm",
         "cwtv",
         "dtype",
+        "eezzzzzz",
+        "hhhhmmmm",
         "iloc",
         "isdigit",
         "kyildiz",
+        "ldjson",
         "loadtxt",
+        "mmssssss",
         "nditer",
         "numpy",
         "omconvert",
         "resampling",
-        "tscsv"
+        "struct",
+        "tscsv",
+        "yyyyyyxx",
+        "zzzzyyyy"
     ]
 }
