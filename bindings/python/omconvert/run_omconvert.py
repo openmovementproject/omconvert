@@ -38,6 +38,6 @@ def run_omconvert(source_file):
 
 # Test version
 if __name__ == "__main__":
-    source_file = '_local/sample.cwa'
-    #source_file = '_local/mixed_wear.cwa'
+    source_file = '../_local/sample.cwa'
+    #source_file = '../_local/mixed_wear.cwa'
     run_omconvert(source_file)

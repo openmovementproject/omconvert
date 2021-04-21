@@ -38,7 +38,7 @@ def run_svm(source_file, test_load_everything=False):
 
 # Test version
 if __name__ == "__main__":
-    #source_file = '_local/2021-04-01-123456123_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX_ACC.csv'
-    source_file = '_local/sample.csv'
-    #source_file = '_local/mixed_wear.csv'
+    #source_file = '../_local/2021-04-01-123456123_XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX_ACC.csv'
+    source_file = '../_local/sample.csv'
+    #source_file = '../_local/mixed_wear.csv'
     run_svm(source_file)

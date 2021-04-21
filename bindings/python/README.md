@@ -3,6 +3,13 @@
 This is a Python wrapper for the `omconvert` binary, and Python implementations of some of the `omconvert` algorithms.  The `omconvert` program will process `.cwa` and `.omx` binary files and produce calculated outputs, such as SVM and WTV (wear-time validation).  It can also be used to output raw accelerometer `.csv` files (these will be very large), and they can be run through the Python versions of the analysis algorithms (slowly).
 
 
+<!--
+```
+python -m pip install -e https://github.com/digitalinteraction/omconvert.git#egg=omconvert&subdirectory=bindings/python
+```
+-->
+
+
 ## Python wrapper
 
 * [omconvert.py](omconvert.py) - the Python wrapper containing the `OmConvert` class.

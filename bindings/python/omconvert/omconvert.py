@@ -49,13 +49,16 @@ class OmConvert:
         # Prefer binary co-located with source file
         search_path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+        # Prefer binary in 'bin' folder in parent folder of source file
+        search_path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '../bin'))
+
         # Prefer a full path if specified
         parts = os.path.split(executable_name)
         executable_name = parts[1]
         if parts[0]  != '':
             search_path.insert(0, parts[0])
 
-        # If on Windows, append .exe and search in a default location
+        # If on Windows, append .exe and search in a default installation location (as a last resort)
         if (os.name == 'nt'):
             if os.path.splitext(executable_name)[1] == '':
                 executable_name = executable_name + '.exe'
