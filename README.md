@@ -1,19 +1,32 @@
 # Open Movement file converter
 
-A pre-built binary for Windows is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  Alternatively, if you have installed *OM-GUI*, you should find it at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`
+## Obtaining the binary
 
-On Linux or Mac (*XCode* required), you can use this single line command to build an `omconvert` binary in the current directory:
+A pre-built binary for Windows is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  Alternatively, if you have installed *OM-GUI*, you should find it at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`.  
+
+Alternatively, on Windows, you can build an `omconvert.exe` binary in the current directory (Visual Studio, or the [Build Tools for Visual Studio](https://aka.ms/buildtools) required) with:
+
+```cmd
+powershell -Command "& {Invoke-WebRequest https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build.zip ; Expand-Archive omconvert.build.zip ; del omconvert.build.zip ; omconvert.build/omconvert-master/src/omconvert/build.cmd ; copy omconvert.build/omconvert-master/src/omconvert/omconvert.exe . }"
+```
+
+On other operating systems, such as Mac (*XCode* required), Linux or WSL, you can use this single line command to build an `omconvert` binary in the current directory:
 
 ```bash
 mkdir omconvert.build && curl -L https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build/master.zip && unzip omconvert.build/master.zip -d omconvert.build && make -C omconvert.build/omconvert-master/src/omconvert && cp omconvert.build/omconvert-master/src/omconvert/omconvert .
 ```
+
+Alternatively, you can clone this repository and, on Windows, run `src/omconvert/build.cmd`, or, on other operating systems, `make -C src/omconvert`.
+
+
+## Analysis methods
 
 For full help showing all of the algorithm command-line parameters, use the parameter `--help`.  Note that there is a default `-calibrate 1` option for auto-calibration. 
 
 Several of the built-in analysis methods are described in more detail in [AX3-GUI: Analysis Toolbar](https://github.com/digitalinteraction/openmovement/wiki/AX3-GUI#analysis-toolbar).
 
 
-## Vector Magnitude
+### Vector Magnitude
 
 The mean acceleration vector magnitude minus static gravity (over an epoch) is a commonly-used, simple to calculate, metric.  
 Typically known as *SVM-1* (Signal Vector Magnitude, typically averaging the *absolute* value of negative numbers)*, or 
@@ -36,7 +49,7 @@ for the values:  use the parameter `-svm-extended`, where 1=emit zero, 2=empty c
 To take the *absolute* of negative values (default) use `-svm-mode 0`; to treat negative values as *zero* use `-svm-mode 1`.
 
 
-## Cut-Points
+### Cut-Points
 
 The cut-point algorithm takes the mean vector magnitude value mins one as an absolute value 
 (controlled by the `-paee-filter` option as above) for one-minute intervals, then classifies them into 
@@ -109,7 +122,7 @@ Powell-wristND:          47/30/15 64/30/15 157/30/15
 ```
 
 
-## Wear-Time Validation
+### Wear-Time Validation
 
 The wear-time calculation is based on the method by van Hees et al in PLos ONE 2011 6(7), 
 "Estimation of Daily Energy Expenditure in Pregnant and Non-Pregnant Women Using a Wrist-Worn Tri-Axial Accelerometer".
@@ -125,7 +138,7 @@ An example to produce an analysis of wear-time:
 omconvert datafile.cwa -wtv-file datafile.wtv.csv
 ```
 
-## Sleep
+### Sleep
 
 This is an implementation of the "Estimation of Stationary Sleep-segments" approach from
 Marko Borazio, Eugen Berlin, Nagihan Kucukyildiz, Philipp M. Scholl and Kristof Van Laerhoven:
@@ -139,7 +152,7 @@ omconvert datafile.cwa -sleep-file datafile.sleep.csv
 For more advanced uses, you may find the [omsummary](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/omsummary.md) tool useful.
 
 
-## AG Counts
+### AG Counts
 
 There is an implementation of the method from *Frequency filtering and the aggregation of raw accelerometry into Actigraph counts.* (Jan Brond, Daniel Arvidsson, Lars Bo Andersen. 5th International Conference on Ambulatory Monitoring of Physical Activity and Movement, ICAMPAM June 2017) to convert the raw accelerometer values to *AG counts*.  The data must be resampled at 30Hz for this algorithm to work correctly:
 
@@ -150,7 +163,7 @@ omconvert datafile.cwa -resample 30 -interpolate-mode 1 -counts-epoch 1 -counts-
 Where the `-counts-epoch` is in seconds.  The standard output is a simple .CSV file with the counts for the x/y/z axes, but you can also use the option `-csv-format:ag` to create an output file compatible with "ActiGraph(tm) ActiLife" software, and `-csv-format:agdt` to create an output file compatible with "ActiGraph(tm) ActiLife Data Table format".
 
 
-## AG Raw
+### AG Raw
 
 You can export a .CWA file at 30Hz in a .CSV file with a header that makes it compatible with "ActiGraph(tm) ActiLife" software, then use that software to calculate the counts.
 
@@ -161,7 +174,7 @@ omconvert datafile.cwa -resample 30 -interpolate-mode 1 -csv-format:ag -csv-file
 If you have the "pre-built binary for Windows" (from the link above, unzipped to a folder), then you can simply drag your `.CWA` file(s) over the batch file `_cwa-to-counts.cmd` to generate a 1 minute epoch counts summary.  Alternatively, use the file `_cwa-to-counts+raw.cmd` to also generate a 30 Hz raw export (which may take a while as it could be a large file) for use in ActiLife directly.
 
 
-## Pedometer / Step Counter
+### Pedometer / Step Counter
 
 There is an implementation of a step count algorithm for a wrist-worn triaxial accelerometer based on the method from *Design and Implementation of Practical Step Detection Algorithm for Wrist-Worn Devices* (Yunhoon Cho, Hyuntae Cho, and Chong-Min Kyung. IEEE Sensors Journal, vol. 16, no. 21, pp. 7720-7730, Nov.1, 2016. doi: 10.1109/JSEN.2016.2603163). The data must be resampled at 20Hz for this algorithm to work correctly:
 

@@ -1,8 +1,9 @@
+# python -m pip install -e "git+https://github.com/digitalinteraction/omconvert.git#egg=openmovement&subdirectory=bindings/python"
 #import sys
 #sys.path.append("../../bindings/python")
 
 import os
-import omconvert
+from openmovement import omconvert
 
 def run_omconvert(source_file):
     options = {}
@@ -38,6 +39,6 @@ def run_omconvert(source_file):
 
 # Test version
 if __name__ == "__main__":
-    source_file = '../_local/sample.cwa'
-    #source_file = '../_local/mixed_wear.cwa'
+    source_file = '_local/sample.cwa'
+    #source_file = '_local/mixed_wear.cwa'
     run_omconvert(source_file)

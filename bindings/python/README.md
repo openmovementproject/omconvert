@@ -5,7 +5,7 @@ This is a Python wrapper for the `omconvert` binary, and Python implementations 
 
 <!--
 ```
-python -m pip install -e https://github.com/digitalinteraction/omconvert.git#egg=omconvert&subdirectory=bindings/python
+python -m pip install -e "git+https://github.com/digitalinteraction/omconvert.git#egg=openmovement&subdirectory=bindings/python"
 ```
 -->
 
