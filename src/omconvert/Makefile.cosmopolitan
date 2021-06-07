@@ -1,0 +1,21 @@
+# make -f Makefile.cosmopolitan clean all
+# make 
+
+BIN_NAME = omconvert
+CC = gcc
+CFLAGS =
+USER_DEFINES=-DNO_MMAP=1
+
+LIBS = -lm -lpthread
+
+SRC = $(wildcard *.c)
+INC = $(wildcard *.h)
+
+all: $(BIN_NAME)
+
+$(BIN_NAME): Makefile $(SRC) $(INC)
+	$(CC) -std=c99 -Wall -ffast-math -g -Os -static -nostdlib -nostdinc -fno-pie -no-pie -mno-red-zone -fno-omit-frame-pointer -pg -mnop-mcount $(USER_DEFINES) -o $(BIN_NAME).com.dbg $(SRC) -fuse-ld=bfd -Wl,-T,cosmopolitan/ape.lds -include cosmopolitan/cosmopolitan.h cosmopolitan/crt.o cosmopolitan/ape.o cosmopolitan/cosmopolitan.a -I/usr/local/include -L/usr/local/lib $(LIBS) -Icosmopolitan/include
+	objcopy -S -O binary $(BIN_NAME).com.dbg $(BIN_NAME).com
+
+clean:
+	rm -f *.o core $(BIN_NAME).com $(BIN_NAME).com.dbg
