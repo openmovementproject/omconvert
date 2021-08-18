@@ -1,2 +1,4 @@
 /.vscode
 _local
+/src/omconvert/*.cwa
+/src/omconvert/*.dbg
