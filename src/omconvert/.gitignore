@@ -10,3 +10,5 @@
 /.vscode
 /*.obj
 /*.exe
+/*.wav
+/resampler
