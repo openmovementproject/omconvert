@@ -132,10 +132,8 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 #ifdef RESAMPLER_FILTER_DOUBLE
 			double v = inData[j];
 			filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
-#if 1
-// Scale???
-v *= resampler->upSample;
-#endif
+			// Gain: must scale values (before/after filter) to keep constant average energy after upsample interpolation filter
+			v *= resampler->upSample;
 			resampler->filtered[j] = (resampler_data_t)v;
 #else
 		#error "Unimplemented"
