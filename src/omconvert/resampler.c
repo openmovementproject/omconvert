@@ -10,7 +10,7 @@
 
 
 // Zero data for upsample
-static const resampler_data_t zeroData[RESAMPLER_MAX_AXES] = {0};
+static const resampler_data_t zeroData[RESAMPLER_MAX_AXES] = {0};  // ideally FILTER_FROM_INPUT(0), but still zero.
 
 // Greatest common divisor
 static int gcd(int u, int v) {
@@ -28,8 +28,35 @@ static int gcd(int u, int v) {
 }
 
 
+// Apply the filter, specified by the coefficients b & a, to count elements of data X, returning in data Y (can be same as X), where z[] tracks the final/initial conditions.
+static void resampler_filter(int numCoefficients, const filter_data_t *b, const filter_data_t *a, const filter_data_t *X, filter_data_t *Y, int count, filter_data_t *z) {
+#ifndef RESAMPLER_FILTER_DOUBLE
+	#error "Unimplemented"
+#endif
+	if (numCoefficients > 0) {
+		int m, i;
+		z[numCoefficients - 1] = 0;
+		for (m = 0; m < count; m++) {
+			filter_data_t oldXm = X[m];
+			filter_data_t newXm = b[0] * oldXm + z[0];
+			for (i = 1; i < numCoefficients; i++)
+			{
+				z[i - 1] = b[i] * oldXm + z[i] - a[i] * newXm;
+			}
+			Y[m] = newXm;
+		}
+	}
+	else if (X != Y) 
+	{
+		// Pass-through, and destination is not the source
+		memmove(Y, X, sizeof(filter_data_t) * count);
+	}
+	return;
+}
+
+
 // Initialize the resampler state
-void resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int axes) {
+bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int axes) {
 	memset(resampler, 0, sizeof(*resampler));
 	
 	// Rational resampler: outFrequency = inFrequency * (P/Q)
@@ -42,47 +69,94 @@ void resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 	resampler->upSample = resampler->outFrequency / divisor;		// Upsample: 1:P
 	resampler->lowPass = ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency) / 2;		// Low-pass filter
 	resampler->downSample = resampler->inFrequency / divisor;		// Downsample: Q:1
+
+	resampler->intermediateFrequency = resampler->inFrequency * resampler->upSample;
+
+	resampler->numCoefficients = 0;
 	
+	// Start at end of upsample/downsample cycles
+	resampler->upPos = resampler->upSample;
+	resampler->downPos = resampler->downSample;
+
 	// Filter coefficients
-#ifdef RESAMPLER_FILTER_DOUBLE
+#ifdef RESAMPLER_CALCULATE_COEFFICIENTS
+	{
 		// Filter parameters
 		const int order = 4;
-		double Fc1 = -1;											// Low-pass
-		double Fc2 = resampler->lowPass;							// Cut-off frequency is half the lowest sample rate
-		double Fs = resampler->inFrequency * resampler->upSample;	// Intermediate signal frequency
+		double Fc1 = -1;								// Low-pass
+		double Fc2 = resampler->lowPass;				// Cut-off frequency is half the lowest sample rate
+		double Fs = resampler->intermediateFrequency;	// Intermediate signal frequency
 
 		// Calculate normalized cut-offs
-		double W1 = Fc1 / (Fs / 2);
-		double W2 = Fc2 / (Fs / 2);
+		double W1 = Fc1 > 0 ? (Fc1 / (Fs / 2)) : Fc1;
+		double W2 = Fc2 > 0 ? (Fc2 / (Fs / 2)) : Fc2;
 
 		// Calculate coefficients
-		resampler->numCoefficients = CoefficientsButterworth(order, W1, W2, resampler->B, resampler->A);
+		double B[BUTTERWORTH_MAX_COEFFICIENTS(BUTTERWORTH_MAX_ORDER)];
+		double A[BUTTERWORTH_MAX_COEFFICIENTS(BUTTERWORTH_MAX_ORDER)];
+		resampler->numCoefficients = CoefficientsButterworth(order, W1, W2, B, A);
+		for (int j = 0; j < resampler->numCoefficients; j++) {
+			resampler->A[j] = FILTER_FROM_FLOAT(A[j]);
+			resampler->B[j] = FILTER_FROM_FLOAT(B[j]);
+		}
 
-		#if 0
-			// # Fc1 = 0.5; Fc2 = 20; Fs = 100; order = 4; [b, a] = butter(4, [Fc1, Fc2] . / (Fs / 2))
-			// # b = 0.0430         0 -0.1720         0    0.2580         0 -0.1720         0    0.0430
-			// # a = 1.0000 -4.7509    9.7480 -11.6172    9.1051 -4.8601    1.6715 -0.3294    0.0329
+#if 1
+		printf("\t// %d -> %d Hz\n", resampler->inFrequency, resampler->outFrequency);
+		printf("\tif (resampler->intermediateFrequency == %d * %d /*=%d*/ && resampler->lowPass == %d / 2 /*=%d*/) {\n", resampler->upSample, resampler->inFrequency, resampler->intermediateFrequency, ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency), resampler->lowPass);
+		printf("\t\tresampler->numCoefficients = %d;\n", resampler->numCoefficients);
+		for (int j = 0; j < resampler->numCoefficients; j++) {
+			printf("\t\tresampler->B[%d] = FILTER_FROM_FLOAT(%.15f);", j, B[j]);
+			#ifndef RESAMPLER_FILTER_DOUBLE
+				printf(" // Fixed: %.15f", j, B[j], FILTER_TO_FLOAT(resampler->B[j]));
+			#endif
+			printf("\n");
+		}
+		for (int j = 0; j < resampler->numCoefficients; j++) {
+			printf("\t\tresampler->A[%d] = FILTER_FROM_FLOAT(%.15f);", j, A[j]);
+			#ifndef RESAMPLER_FILTER_DOUBLE
+				printf(" // Fixed: %.15f", j, A[j], FILTER_TO_FLOAT(resampler->A[j]));
+			#endif
+			printf("\n");
+		}
+		printf("\t}\n");
+#endif
 
-			// Display coefficients
-			printf("B: "); for (int i = 0; i < status->numCoefficients; i++) { printf("%f ", status->B[i]); } printf("\n");
-			printf("A: "); for (int i = 0; i < status->numCoefficients; i++) { printf("%f ", status->A[i]); } printf("\n");
-		#endif
+	}
 #else
-		#error "Unimplemented"
+
+	// 100 -> 32 Hz
+	if (resampler->intermediateFrequency == 8 * 100 /* 800 */ && resampler->lowPass == 32 / 2 /* 16 */) {
+			resampler->numCoefficients = 5;
+			resampler->B[0] = FILTER_FROM_FLOAT(0.000013293728899);
+			resampler->B[1] = FILTER_FROM_FLOAT(0.000053174915595);
+			resampler->B[2] = FILTER_FROM_FLOAT(0.000079762373393);
+			resampler->B[3] = FILTER_FROM_FLOAT(0.000053174915595);
+			resampler->B[4] = FILTER_FROM_FLOAT(0.000013293728899);
+			resampler->A[0] = FILTER_FROM_FLOAT(1.000000000000000);
+			resampler->A[1] = FILTER_FROM_FLOAT(-3.671729089161936);
+			resampler->A[2] = FILTER_FROM_FLOAT(5.067998386734190);
+			resampler->A[3] = FILTER_FROM_FLOAT(-3.115966925201746);
+			resampler->A[4] = FILTER_FROM_FLOAT(0.719910327291871);
+	}
+
+	// TODO: 100 -> 30 Hz
+	// TODO: 50 -> 32 Hz
+	// TODO: 50 -> 30 Hz
+
+	if (resampler->numCoefficients == 0) {
+		fprintf(stderr, "ERROR: Unimplemented frequency parameters and RESAMPLER_CALCULATE_COEFFICIENTS not defined.");
+	}
+
 #endif
 
 	// Initialize filter state
 	for (int j = 0; j < resampler->axes; j++) {
 		for (int k = 0; k < resampler->numCoefficients; k++) {
-			resampler->z[j][k] = 0;
+			resampler->z[j][k] = FILTER_FROM_INPUT(0);
 		}
 	}
 
-	// Start at end of upsample/downsample cycles
-	resampler->upPos = resampler->upSample;
-	resampler->downPos = resampler->downSample;
-
-	return;
+	return resampler->numCoefficients > 0;
 }
 
 
@@ -129,15 +203,11 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 
 		// Apply upsampled data through per-channel filters
 		for (int j = 0; j < resampler->axes; j++) {
-#ifdef RESAMPLER_FILTER_DOUBLE
-			double v = inData[j];
-			filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
+			filter_data_t v = FILTER_FROM_INPUT(inData[j]);
+			resampler_filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
 			// Gain: must scale values (before/after filter) to keep constant average energy after upsample interpolation filter
 			v *= resampler->upSample;
-			resampler->filtered[j] = (resampler_data_t)v;
-#else
-		#error "Unimplemented"
-#endif
+			resampler->filtered[j] = FILTER_TO_OUTPUT(v);
 		}
 
 		// Take output at start of next downsample cycle
