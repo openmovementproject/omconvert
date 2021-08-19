@@ -1,6 +1,10 @@
-// Resampler
+// Signal Resampler
+// Dan Jackson
 
-// gcc -DRESAMPLER_TEST butter.c wav.c resampler.c -lm -o resampler && ./resampler chirp.wav
+// If using RESAMPLER_CALCULATE_COEFFICIENTS:
+//   gcc -DRESAMPLER_TEST butter.c wav.c resampler.c -lm -o resampler && ./resampler chirp.wav
+// ...otherwise:
+//   gcc -DRESAMPLER_TEST wav.c resampler.c -o resampler && ./resampler chirp.wav
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,7 +110,7 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 			#endif
 		}
 
-#if 1
+#if 1	// Output for adding a an in-built conversion
 		printf("\t// %d -> %d Hz (upsample 1:%d; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->lowPass, resampler->downSample);
 		printf("\tif (resampler->intermediateFrequency == %d * %d /*=%d*/ && resampler->lowPass == %d / 2 /*=%d*/) {\n", resampler->upSample, resampler->inFrequency, resampler->intermediateFrequency, ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency), resampler->lowPass);
 		printf("\t\tresampler->numCoefficients = %d;\n", resampler->numCoefficients);
@@ -130,42 +134,34 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 	}
 #else
 
-	// 100 -> 32 Hz
-	if (resampler->intermediateFrequency == 8 * 100 /* 800 */ && resampler->lowPass == 32 / 2 /* 16 */) {
-			resampler->numCoefficients = 5;
-			resampler->B[0] = FILTER_FROM_FLOAT(0.000013293728899);
-			resampler->B[1] = FILTER_FROM_FLOAT(0.000053174915595);
-			resampler->B[2] = FILTER_FROM_FLOAT(0.000079762373393);
-			resampler->B[3] = FILTER_FROM_FLOAT(0.000053174915595);
-			resampler->B[4] = FILTER_FROM_FLOAT(0.000013293728899);
-			resampler->A[0] = FILTER_FROM_FLOAT(1.000000000000000);
-			resampler->A[1] = FILTER_FROM_FLOAT(-3.671729089161936);
-			resampler->A[2] = FILTER_FROM_FLOAT(5.067998386734190);
-			resampler->A[3] = FILTER_FROM_FLOAT(-3.115966925201746);
-			resampler->A[4] = FILTER_FROM_FLOAT(0.719910327291871);
+	// 50 -> 30 Hz (upsample 1:3; low-pass 15 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 3 * 50 /*=150*/ && resampler->lowPass == 30 / 2 /*=15*/) {
+		resampler->numCoefficients = 5;
+		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
+		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[2] = FILTER_FROM_FLOAT(+0.028946060146297); // Fixed: +0.028930664062500
+		resampler->B[3] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[4] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
+		resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000
+		resampler->A[1] = FILTER_FROM_FLOAT(-2.369513007182038); // Fixed: -2.369506835937500
+		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
+		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
+		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
 	}
 
 	// 100 -> 30 Hz (upsample 1:3; low-pass 15 Hz; downsample 10:1)
 	if (resampler->intermediateFrequency == 3 * 100 /*=300*/ && resampler->lowPass == 30 / 2 /*=15*/) {
-			resampler->numCoefficients = 5;
-			resampler->B[0] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000427246093750      
-			resampler->B[1] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001678466796875      
-			resampler->B[2] = FILTER_FROM_FLOAT(+0.002499595226440); // Fixed: +0.002502441406250      
-			resampler->B[3] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001678466796875      
-			resampler->B[4] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000427246093750      
-			resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000      
-			resampler->A[1] = FILTER_FROM_FLOAT(-3.180638548874719); // Fixed: -3.180633544921875      
-			resampler->A[2] = FILTER_FROM_FLOAT(+3.861194348994213); // Fixed: +3.861206054687500      
-			resampler->A[3] = FILTER_FROM_FLOAT(-2.112155355110968); // Fixed: -2.112152099609375
-			resampler->A[4] = FILTER_FROM_FLOAT(+0.438265142261980); // Fixed: +0.438262939453125
-	}
-
-	// TODO: 100 -> 30 Hz
-	// TODO: 50 -> 32 Hz
-	// TODO: 50 -> 30 Hz
-
-	if (resampler->numCoefficients == 0) {
-		fprintf(stderr, "ERROR: Unimplemented frequency parameters and RESAMPLER_CALCULATE_COEFFICIENTS not defined.");
+		resampler->numCoefficients = 5;
+		resampler->B[0] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000366210937500
+		resampler->B[1] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001708984375000
+		resampler->B[2] = FILTER_FROM_FLOAT(+0.002499595226440); // Fixed: +0.002441406250000
+		resampler->B[3] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001708984375000
+		resampler->B[4] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000366210937500
+		resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000
+		resampler->A[1] = FILTER_FROM_FLOAT(-3.180638548874719); // Fixed: -3.180664062500000
+		resampler->A[2] = FILTER_FROM_FLOAT(+3.861194348994213); // Fixed: +3.861206054687500
+		resampler->A[3] = FILTER_FROM_FLOAT(-2.112155355110968); // Fixed: -2.112182617187500
+		resampler->A[4] = FILTER_FROM_FLOAT(+0.438265142261980); // Fixed: +0.438232421875000
 	}
 
 #endif
@@ -224,20 +220,10 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 
 		// Apply upsampled data through per-channel filters
 		for (int j = 0; j < resampler->axes; j++) {
-			// Gain: must scale values (before/after filter) to keep constant average energy after upsample interpolation filter
-			filter_data_t v = FILTER_FROM_INPUT(inData[j] * resampler->upSample);
+			filter_data_t v = FILTER_FROM_INPUT(inData[j]);
+			v *= resampler->upSample;	// Apply gain: must scale values to keep constant average energy after upsample interpolation filter
 			resampler_filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
 			resampler->filtered[j] = FILTER_TO_OUTPUT(v);
-#if 0
-			if (j == 0) { 		// Debug only axis-0
-				static unsigned int t = 0;
-				printf("@%u [", t++);
-				for (int k = 0; k < resampler->numCoefficients; k++) {
-					printf(" %f", FILTER_TO_FLOAT(resampler->z[j][k]));
-				}
-				printf(" ]\n");
-			}
-#endif
 		}
 
 		// Take output at start of next downsample cycle
@@ -315,7 +301,10 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 	}
 
 	// Initialize the resampler
-	resampler_init(&resampler, wavInfo.freq, outFrequency, chans);
+	if (!resampler_init(&resampler, wavInfo.freq, outFrequency, chans)) {
+		fprintf(stderr, "ERROR: Support for specified frequencies not implemented (and RESAMPLER_CALCULATE_COEFFICIENTS not defined).\n");
+		return 1;
+	}
 
 	// Output size
 	const size_t outputSamples = wavInfo.numSamples * outFrequency / wavInfo.freq;
