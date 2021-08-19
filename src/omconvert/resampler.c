@@ -79,6 +79,8 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 	resampler->upPos = resampler->upSample;
 	resampler->downPos = resampler->downSample;
 
+//	printf("DEBUG: %d -> %d Hz (upsample 1:%d; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->lowPass, resampler->downSample);
+
 	// Filter coefficients
 #ifdef RESAMPLER_CALCULATE_COEFFICIENTS
 	{
@@ -194,7 +196,7 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 	for(;;) {
 
 		// Try to advance the upsampler
-		if (resampler->upPos + 1 > resampler->upSample) {
+		if (resampler->upPos + 1 >= resampler->upSample) {
 			// End of upsampler cycle, try to get the next sample to start a new cycle
 			if (resampler->inputSamplesRemaining > 0) {
 				// Start of upsampling cycle
@@ -340,14 +342,16 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 		size_t outputCount;
 		while ((outputCount = resampler_output(&resampler, output, OUTPUT_MAX_SAMPLES)) != 0) {
 //printf("<<< O+=%d\n", (int)outputCount);
-			int16_t *out = outputBuffer + (totalOut * chans);
 			for (int i = 0; i < outputCount; i++) {
+				size_t op = totalOut + i;
+				int16_t *out = outputBuffer + (op * chans);
 				resampler_data_t *outSample = output + (i * chans);
-//				printf("%.2f,%d,%d,%d\n", (float)(totalOut + i) / outFrequency, outSample[0], outSample[1], outSample[2]);
-				for (int j = 0; j < chans; j++) {
-					out[j] = outSample[j];
+//				printf("%.2f,%d,%d,%d,%s\n", (float)op / outFrequency, outSample[0], outSample[1], outSample[2], (op < outputSamples) ? "" : "1");
+				if (op < outputSamples) {
+					for (int j = 0; j < chans; j++) {
+						out[j] = outSample[j];
+					}
 				}
-				out += chans;
 			}
 			totalOut += outputCount;
 		}
@@ -356,9 +360,6 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 		
 		sample += inputSampleCount * chans;
 		i += inputSampleCount;
-#if 0
-//		if (totalOut > 150) { fprintf(stderr, "Stopping early.\n"); break; }
-#endif
 	}
 	
 	// Output file
@@ -374,6 +375,8 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 	fclose(ofp);
 	if (written != outputSize) { fprintf(stderr, "ERROR: Problem writing to output file.\n"); return 1; }
 	fprintf(stderr, "DEBUG: Written %lu samples (%d-channel, @%d Hz)\n", outputSamples, chans, outFrequency);
+
+	fprintf(stderr, "DEBUG: Computed %d output samples, expected %d, %.3f %%, saved rate = %.2f Hz, generated rate = %.2f Hz, \n", totalOut, (int)outputSamples, 100.0 * totalOut / outputSamples, outputSamples / ((double)wavInfo.numSamples / wavInfo.freq),  totalOut / ((double)wavInfo.numSamples / wavInfo.freq)); 
 
 	return 0;
 }
