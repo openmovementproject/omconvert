@@ -11,7 +11,7 @@ extern "C" {
 #include <stdbool.h>
 
 
-// Config
+// Config (move to `resampler-config.h`?)
 //#define RESAMPLER_CALCULATE_COEFFICIENTS	// Support generating aribtrary filters (not just a fixed set)
 #define RESAMPLER_FILTER_DOUBLE				// Use floating-point calculations (otherwise, fixed-point for embedded)
 #define RESAMPLER_MAX_AXES 3				// Triaxial
@@ -30,16 +30,21 @@ typedef int16_t resampler_data_t;
 	#define FILTER_TO_OUTPUT(_x) ((resampler_data_t)(_x))
 	#define FILTER_FROM_FLOAT(_x) (_x)
 	#define FILTER_TO_FLOAT(_x) (_x)
+	#define FILTER_MULTIPLY(_x, _y) ((_x) * (_y))
+
+	//#define FILTER_SIMULATE_FIXED 14			// Fixed-point precision to simulate in coefficients
 #else
-	#error "Fixed-point unimplemented"
-	//typedef int32_t filter_data_t;
-	#define FILTER_FRACTIONAL 8						// Number of fixed-point fractional bits
-	#define FILTER_SCALING (1<<FILTER_FRACTIONAL)	// Scaling value for fixed-point
+	typedef int32_t filter_data_t;
+	#define FILTER_FRACTIONAL 15						// Number of fixed-point fractional bits
+	#define FILTER_SCALING (1<<FILTER_FRACTIONAL)		// Scaling value for fixed-point
+	#define FILTER_BIAS (1<<(FILTER_FRACTIONAL - 1))	// Half unit bias
 
 	#define FILTER_FROM_INPUT(_x) ((filter_data_t)(_x) << FILTER_FRACTIONAL)
-	#define FILTER_TO_OUTPUT(_x) ((resampler_data_t)(_x) >> FILTER_FRACTIONAL)	// Consider: rounding nearest rather than rounding down
-	#define FILTER_FROM_FLOAT(_x) ((filter_data_t)((_x) * FILTER_SCALING))
-	#define FILTER_TO_FLOAT(_x) ((float)(_x) / FILTER_SCALING)
+	#define FILTER_TO_OUTPUT(_x) ((resampler_data_t)((_x)) >> FILTER_FRACTIONAL)	// Does rounding make much difference here? (+ FILTER_BIAS)
+	#define FILTER_FROM_FLOAT(_x) ((filter_data_t)((_x) * FILTER_SCALING + ((_x) < 0 ? -0.5 : 0.5)))
+	#define FILTER_TO_FLOAT(_x) ((double)(_x) / FILTER_SCALING)		// Only used for display
+
+	#define FILTER_MULTIPLY(_x, _y) (((_x) * (_y)) >> FILTER_FRACTIONAL)
 #endif
 
 typedef struct {

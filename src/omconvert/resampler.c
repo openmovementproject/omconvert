@@ -30,18 +30,15 @@ static int gcd(int u, int v) {
 
 // Apply the filter, specified by the coefficients b & a, to count elements of data X, returning in data Y (can be same as X), where z[] tracks the final/initial conditions.
 static void resampler_filter(int numCoefficients, const filter_data_t *b, const filter_data_t *a, const filter_data_t *X, filter_data_t *Y, int count, filter_data_t *z) {
-#ifndef RESAMPLER_FILTER_DOUBLE
-	#error "Unimplemented"
-#endif
 	if (numCoefficients > 0) {
 		int m, i;
 		z[numCoefficients - 1] = 0;
 		for (m = 0; m < count; m++) {
 			filter_data_t oldXm = X[m];
-			filter_data_t newXm = b[0] * oldXm + z[0];
+			filter_data_t newXm = FILTER_MULTIPLY(b[0], oldXm) + z[0];
 			for (i = 1; i < numCoefficients; i++)
 			{
-				z[i - 1] = b[i] * oldXm + z[i] - a[i] * newXm;
+				z[i - 1] = FILTER_MULTIPLY(b[i], oldXm) + z[i] - FILTER_MULTIPLY(a[i], newXm);
 			}
 			Y[m] = newXm;
 		}
@@ -98,23 +95,32 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		for (int j = 0; j < resampler->numCoefficients; j++) {
 			resampler->A[j] = FILTER_FROM_FLOAT(A[j]);
 			resampler->B[j] = FILTER_FROM_FLOAT(B[j]);
+
+			#if defined(FILTER_SIMULATE_FIXED) && defined(RESAMPLER_FILTER_DOUBLE)
+				// Simulate a fixed-point precision in coefficients
+				const double scale = (1 << FILTER_SIMULATE_FIXED);
+				resampler->B[j] = (int32_t)(B[j] * scale + (B[j] < 0 ? -0.5 : 0.5)) / scale;
+				resampler->A[j] = (int32_t)(A[j] * scale + (A[j] < 0 ? -0.5 : 0.5)) / scale;
+				printf("WARNING: Simulating fixed point precision in coefficients: B[%d] = %.15f;  // Float: %.15f\n", j, resampler->B[j], B[j]);
+				printf("WARNING: Simulating fixed point precision in coefficients: A[%d] = %.15f;  // Float: %.15f\n", j, resampler->A[j], A[j]);
+			#endif
 		}
 
 #if 1
-		printf("\t// %d -> %d Hz\n", resampler->inFrequency, resampler->outFrequency);
+		printf("\t// %d -> %d Hz (upsample 1:%d; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->lowPass, resampler->downSample);
 		printf("\tif (resampler->intermediateFrequency == %d * %d /*=%d*/ && resampler->lowPass == %d / 2 /*=%d*/) {\n", resampler->upSample, resampler->inFrequency, resampler->intermediateFrequency, ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency), resampler->lowPass);
 		printf("\t\tresampler->numCoefficients = %d;\n", resampler->numCoefficients);
 		for (int j = 0; j < resampler->numCoefficients; j++) {
-			printf("\t\tresampler->B[%d] = FILTER_FROM_FLOAT(%.15f);", j, B[j]);
+			printf("\t\tresampler->B[%d] = FILTER_FROM_FLOAT(%+.15f);", j, B[j]);
 			#ifndef RESAMPLER_FILTER_DOUBLE
-				printf(" // Fixed: %.15f", j, B[j], FILTER_TO_FLOAT(resampler->B[j]));
+				printf(" // Fixed: %+.15f", FILTER_TO_FLOAT(resampler->B[j]));
 			#endif
 			printf("\n");
 		}
 		for (int j = 0; j < resampler->numCoefficients; j++) {
-			printf("\t\tresampler->A[%d] = FILTER_FROM_FLOAT(%.15f);", j, A[j]);
+			printf("\t\tresampler->A[%d] = FILTER_FROM_FLOAT(%+.15f);", j, A[j]);
 			#ifndef RESAMPLER_FILTER_DOUBLE
-				printf(" // Fixed: %.15f", j, A[j], FILTER_TO_FLOAT(resampler->A[j]));
+				printf(" // Fixed: %+.15f", FILTER_TO_FLOAT(resampler->A[j]));
 			#endif
 			printf("\n");
 		}
@@ -137,6 +143,21 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 			resampler->A[2] = FILTER_FROM_FLOAT(5.067998386734190);
 			resampler->A[3] = FILTER_FROM_FLOAT(-3.115966925201746);
 			resampler->A[4] = FILTER_FROM_FLOAT(0.719910327291871);
+	}
+
+	// 100 -> 30 Hz (upsample 1:3; low-pass 15 Hz; downsample 10:1)
+	if (resampler->intermediateFrequency == 3 * 100 /*=300*/ && resampler->lowPass == 30 / 2 /*=15*/) {
+			resampler->numCoefficients = 5;
+			resampler->B[0] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000427246093750      
+			resampler->B[1] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001678466796875      
+			resampler->B[2] = FILTER_FROM_FLOAT(+0.002499595226440); // Fixed: +0.002502441406250      
+			resampler->B[3] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001678466796875      
+			resampler->B[4] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000427246093750      
+			resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000      
+			resampler->A[1] = FILTER_FROM_FLOAT(-3.180638548874719); // Fixed: -3.180633544921875      
+			resampler->A[2] = FILTER_FROM_FLOAT(+3.861194348994213); // Fixed: +3.861206054687500      
+			resampler->A[3] = FILTER_FROM_FLOAT(-2.112155355110968); // Fixed: -2.112152099609375
+			resampler->A[4] = FILTER_FROM_FLOAT(+0.438265142261980); // Fixed: +0.438262939453125
 	}
 
 	// TODO: 100 -> 30 Hz
@@ -203,11 +224,20 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 
 		// Apply upsampled data through per-channel filters
 		for (int j = 0; j < resampler->axes; j++) {
-			filter_data_t v = FILTER_FROM_INPUT(inData[j]);
-			resampler_filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
 			// Gain: must scale values (before/after filter) to keep constant average energy after upsample interpolation filter
-			v *= resampler->upSample;
+			filter_data_t v = FILTER_FROM_INPUT(inData[j] * resampler->upSample);
+			resampler_filter(resampler->numCoefficients, resampler->B, resampler->A, &v, &v, 1, resampler->z[j]);
 			resampler->filtered[j] = FILTER_TO_OUTPUT(v);
+#if 0
+			if (j == 0) { 		// Debug only axis-0
+				static unsigned int t = 0;
+				printf("@%u [", t++);
+				for (int k = 0; k < resampler->numCoefficients; k++) {
+					printf(" %f", FILTER_TO_FLOAT(resampler->z[j][k]));
+				}
+				printf(" ]\n");
+			}
+#endif
 		}
 
 		// Take output at start of next downsample cycle
@@ -360,7 +390,7 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 }
 
 int main(int argc, char *argv[]) {
-	int outFrequency = 32;
+	int outFrequency = 30;
 
 #if 0
 	for (int y = 0; y <= 12; y ++) {
