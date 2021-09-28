@@ -22,7 +22,7 @@ typedef int16_t resampler_data_t;
 	#include "butter.h"
 	#define RESAMPLER_MAX_COEFFICIENTS BUTTERWORTH_MAX_COEFFICIENTS(BUTTERWORTH_MAX_ORDER)
 #else
-	#define RESAMPLER_MAX_COEFFICIENTS 10		// e.g. 10: 9th-order LP or 7th-order BP
+	#define RESAMPLER_MAX_COEFFICIENTS 10		// e.g. 10: 9th-order LP or 4th-order BP
 #endif
 
 #ifdef RESAMPLER_FILTER_DOUBLE

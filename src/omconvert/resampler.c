@@ -1,8 +1,8 @@
 // Signal Resampler
 // Dan Jackson
 
-// If using RESAMPLER_CALCULATE_COEFFICIENTS:
-//   gcc -DRESAMPLER_TEST butter.c wav.c resampler.c -lm -o resampler && ./resampler chirp.wav
+// To calculate coefficients:
+//   gcc -DRESAMPLER_CALCULATE_COEFFICIENTS -DRESAMPLER_TEST butter.c wav.c resampler.c -lm -o resampler && ./resampler chirp.wav
 // ...otherwise:
 //   gcc -DRESAMPLER_TEST wav.c resampler.c -o resampler && ./resampler chirp.wav
 
@@ -164,6 +164,36 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		resampler->A[2] = FILTER_FROM_FLOAT(+3.861194348994213); // Fixed: +3.861206054687500
 		resampler->A[3] = FILTER_FROM_FLOAT(-2.112155355110968); // Fixed: -2.112182617187500
 		resampler->A[4] = FILTER_FROM_FLOAT(+0.438265142261980); // Fixed: +0.438232421875000
+	}
+
+	// 50 -> 40 Hz (upsample 1:4; low-pass 20 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 4 * 50 /*=200*/ && resampler->lowPass == 40 / 2 /*=20*/) {
+		resampler->numCoefficients = 5;
+		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
+		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[2] = FILTER_FROM_FLOAT(+0.028946060146297); // Fixed: +0.028930664062500
+		resampler->B[3] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[4] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
+		resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000
+		resampler->A[1] = FILTER_FROM_FLOAT(-2.369513007182038); // Fixed: -2.369506835937500
+		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
+		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
+		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
+	}
+	
+	// 100 -> 40 Hz (upsample 1:2; low-pass 20 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 2 * 100 /*=200*/ && resampler->lowPass == 40 / 2 /*=20*/) {
+		resampler->numCoefficients = 5;
+		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000      
+		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[2] = FILTER_FROM_FLOAT(+0.028946060146297); // Fixed: +0.028930664062500
+		resampler->B[3] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
+		resampler->B[4] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
+		resampler->A[0] = FILTER_FROM_FLOAT(+1.000000000000000); // Fixed: +1.000000000000000
+		resampler->A[1] = FILTER_FROM_FLOAT(-2.369513007182038); // Fixed: -2.369506835937500
+		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
+		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
+		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
 	}
 
 #endif
