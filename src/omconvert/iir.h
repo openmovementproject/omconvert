@@ -20,7 +20,7 @@ typedef int64_t iir_multiply_t;				// Temporary holder type for multiplication (
 // IIR Butterworth order 2, 30 Hz, highpass 0.5 Hz.
 // Adapted from code generated using mkfilter by A.J. Fisher
 // http://www.massmind.org/cgi-bin/mkfscript.asp?type=Butterworth&pass=High&o=2&sr=30&c1=0.5
-static iir_value_t iir_order2_rate30_highpass0_5(iir_value_t input) {
+inline static iir_value_t iir_order2_rate30_highpass0_5(iir_value_t input) {
     const iir_fixed_t GAIN = IIR_FROM_FLOAT(1.0/ 1.076862368e+000);
     static iir_fixed_t xv[2+1] = {0}, yv[2+1] = {0};
     xv[0] = xv[1]; xv[1] = xv[2]; 
@@ -36,7 +36,7 @@ static iir_value_t iir_order2_rate30_highpass0_5(iir_value_t input) {
 // IIR Butterworth order 2, 40 Hz, highpass 0.5 Hz.
 // Adapted from code generated using mkfilter by A.J. Fisher
 // http://www.massmind.org/cgi-bin/mkfscript.asp?type=Butterworth&pass=High&o=2&sr=40&c1=0.5
-static iir_value_t iir_order2_rate40_highpass0_5(iir_value_t input) {
+inline static iir_value_t iir_order2_rate40_highpass0_5(iir_value_t input) {
     const iir_fixed_t GAIN = IIR_FROM_FLOAT(1.0/ 1.057108315e+000);
     static iir_fixed_t xv[2+1] = {0}, yv[2+1] = {0};
     xv[0] = xv[1]; xv[1] = xv[2]; 
@@ -52,7 +52,7 @@ static iir_value_t iir_order2_rate40_highpass0_5(iir_value_t input) {
 // IIR Butterworth order 2, 50 Hz, highpass 0.5 Hz.
 // Adapted from code generated using mkfilter by A.J. Fisher
 // http://www.massmind.org/cgi-bin/mkfscript.asp?type=Butterworth&pass=High&o=2&sr=50&c1=0.5
-static iir_value_t iir_order2_rate50_highpass0_5(iir_value_t input) {
+inline static iir_value_t iir_order2_rate50_highpass0_5(iir_value_t input) {
     const iir_fixed_t GAIN = IIR_FROM_FLOAT(1.0/ 1.045431062e+000);
     static iir_fixed_t xv[2+1] = {0}, yv[2+1] = {0};
     xv[0] = xv[1]; xv[1] = xv[2]; 
@@ -68,7 +68,7 @@ static iir_value_t iir_order2_rate50_highpass0_5(iir_value_t input) {
 // IIR Butterworth order 2, 100 Hz, highpass 0.5 Hz.
 // Adapted from code generated using mkfilter by A.J. Fisher
 // http://www.massmind.org/cgi-bin/mkfscript.asp?type=Butterworth&pass=High&o=2&sr=100&c1=0.5
-static iir_value_t iir_order2_rate100_highpass0_5(iir_value_t input) {
+inline static iir_value_t iir_order2_rate100_highpass0_5(iir_value_t input) {
     const iir_fixed_t GAIN = IIR_FROM_FLOAT(1.0/ 1.022463023e+000);
     static iir_fixed_t xv[2+1] = {0}, yv[2+1] = {0};
     xv[0] = xv[1]; xv[1] = xv[2]; 
