@@ -12,6 +12,12 @@
 
 #include "resampler.h"
 
+//#define IIR_TEST 100
+#ifdef IIR_TEST
+	#define IIR_RATE IIR_TEST
+	#include "iir.h"
+#endif
+
 
 // Zero data for upsample
 static const resampler_data_t zeroData[RESAMPLER_MAX_AXES] = {0};  // ideally FILTER_FROM_INPUT(0), but still zero.
@@ -226,8 +232,12 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		filterSet = true;
 	}
 
-
 #endif
+
+	// Allow the pass-through filter
+	if (!filterSet && resampler->inFrequency == resampler->outFrequency && highPass1000 == 0) {
+		filterSet = true;
+	}
 
 	// Initialize filter state
 	for (int j = 0; j < resampler->axes; j++) {
@@ -354,8 +364,14 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 		frequency = RESAMPLER_OVERRIDE_FREQUENCY;
 		fprintf(stderr, "DEBUG: Overriding input frequency (to generate specific coefficients): %d Hz -> %d Hz\n", wavInfo.freq, frequency);
 	#endif
+	// TODO: The resampler does not allow different input and output channel count
 	int chans = wavInfo.chans;
-	if (chans == 4) chans = 3; // Special-case x/y/z/aux -> x/y/z
+	//if (chans == 4) chans = 3; // Special-case x/y/z/aux -> x/y/z
+#ifdef IIR_TEST
+	if (chans != 1) { fprintf(stderr, "ERROR: IIR_TEST will not work for multi-channel (%d) input.\n", chans); return -1; }
+	if (frequency != IIR_TEST) { fprintf(stderr, "WARNING: IIR_TEST=%d is not set to the input frequency: %d Hz.\n", IIR_TEST, frequency); return -1; }
+	if (outFrequency != IIR_TEST) { fprintf(stderr, "WARNING: IIR_TEST=%d is not set to the output frequency: %d Hz.\n", IIR_TEST, outFrequency); return -1; }
+#endif
 	if (chans > RESAMPLER_MAX_AXES) chans = RESAMPLER_MAX_AXES;
 
 	// Compact/reformat data
@@ -368,11 +384,13 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 		}
 	}
 
+#ifndef IIR_TEST
 	// Initialize the resampler
 	if (!resampler_init(&resampler, frequency, outFrequency, highPass1000, chans)) {
 		fprintf(stderr, "ERROR: Support for specified frequencies not implemented (and RESAMPLER_CALCULATE_COEFFICIENTS not defined).\n");
 		return 1;
 	}
+#endif
 
 	// Output size
 	const size_t outputSamples = wavInfo.numSamples * outFrequency / wavInfo.freq;
@@ -391,6 +409,13 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 	int totalOut = 0;
 	for (int i = 0; i < wavInfo.numSamples;) {
 		
+#ifdef IIR_TEST
+		// HACK: Single channel only for now
+		outputBuffer[i] = iir_order2_highpass0_5(sample[i]);
+		i++;
+		totalOut++;
+#else
+
 		size_t inputSampleCount = INPUT_MAX_SAMPLES;
 		if (wavInfo.numSamples - i < inputSampleCount) inputSampleCount = wavInfo.numSamples - i;
 
@@ -422,10 +447,10 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 			totalOut += outputCount;
 		}
 //printf("<<< -\n");
-
 		
 		sample += inputSampleCount * chans;
 		i += inputSampleCount;
+#endif
 	}
 	
 	// Output file
