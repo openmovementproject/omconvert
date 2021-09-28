@@ -1,7 +1,7 @@
 // Signal Resampler
 // Dan Jackson
 
-// To calculate coefficients:
+// To calculate coefficients:  // 	-DRESAMPLER_OVERRIDE_FREQUENCY=100
 //   gcc -DRESAMPLER_CALCULATE_COEFFICIENTS -DRESAMPLER_TEST butter.c wav.c resampler.c -lm -o resampler && ./resampler chirp.wav
 // ...otherwise:
 //   gcc -DRESAMPLER_TEST wav.c resampler.c -o resampler && ./resampler chirp.wav
@@ -57,38 +57,55 @@ static void resampler_filter(int numCoefficients, const filter_data_t *b, const 
 
 
 // Initialize the resampler state
-bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int axes) {
+bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int highPass1000, int axes) {
+	bool filterSet = false;
 	memset(resampler, 0, sizeof(*resampler));
 	
 	// Rational resampler: outFrequency = inFrequency * (P/Q)
 	resampler->inFrequency = inFrequency;	// Q
 	resampler->outFrequency = outFrequency;	// P
+	resampler->highPass1000 = highPass1000;	// optional high-pass filter frequency *1000
 	resampler->axes = axes;
 
 	// Simplify rational fraction (if possible)
 	int divisor = gcd(resampler->inFrequency, resampler->outFrequency);
 	resampler->upSample = resampler->outFrequency / divisor;		// Upsample: 1:P
-	resampler->lowPass = ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency) / 2;		// Low-pass filter
 	resampler->downSample = resampler->inFrequency / divisor;		// Downsample: Q:1
-
 	resampler->intermediateFrequency = resampler->inFrequency * resampler->upSample;
 
+	// Check if frequency conversion low-pass filter required
+	if (resampler->inFrequency == resampler->outFrequency) {
+		resampler->lowPass = 0;
+	} else {
+		resampler->lowPass = ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency) / 2;		// Low-pass filter
+	}
+
+	// Assume pass-through filter at the moment
 	resampler->numCoefficients = 0;
 	
 	// Start at end of upsample/downsample cycles
 	resampler->upPos = resampler->upSample;
 	resampler->downPos = resampler->downSample;
 
-//	printf("DEBUG: %d -> %d Hz (upsample 1:%d; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->lowPass, resampler->downSample);
+#ifdef RESAMPLER_TEST
+	printf("DEBUG: %d -> %d Hz (upsample 1:%d; high-pass %g Hz; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->highPass1000 / 1000.0, resampler->lowPass, resampler->downSample);
+#endif
 
 	// Filter coefficients
 #ifdef RESAMPLER_CALCULATE_COEFFICIENTS
 	{
 		// Filter parameters
-		const int order = 4;
-		double Fc1 = -1;								// Low-pass
-		double Fc2 = resampler->lowPass;				// Cut-off frequency is half the lowest sample rate
+		int order = 4;
+		double Fc1 = -1;
+		double Fc2 = -1;
 		double Fs = resampler->intermediateFrequency;	// Intermediate signal frequency
+
+		if (resampler->highPass1000 != 0) {
+			Fc1 = (double)resampler->highPass1000 / 1000.0;
+		}
+		if (resampler->lowPass != 0) {
+			Fc2 = resampler->lowPass;				// Cut-off frequency is half the lowest sample rate
+		}
 
 		// Calculate normalized cut-offs
 		double W1 = Fc1 > 0 ? (Fc1 / (Fs / 2)) : Fc1;
@@ -97,6 +114,7 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		// Calculate coefficients
 		double B[BUTTERWORTH_MAX_COEFFICIENTS(BUTTERWORTH_MAX_ORDER)];
 		double A[BUTTERWORTH_MAX_COEFFICIENTS(BUTTERWORTH_MAX_ORDER)];
+
 		resampler->numCoefficients = CoefficientsButterworth(order, W1, W2, B, A);
 		for (int j = 0; j < resampler->numCoefficients; j++) {
 			resampler->A[j] = FILTER_FROM_FLOAT(A[j]);
@@ -113,8 +131,12 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		}
 
 #if 1	// Output for adding a an in-built conversion
-		printf("\t// %d -> %d Hz (upsample 1:%d; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->lowPass, resampler->downSample);
-		printf("\tif (resampler->intermediateFrequency == %d * %d /*=%d*/ && resampler->lowPass == %d / 2 /*=%d*/) {\n", resampler->upSample, resampler->inFrequency, resampler->intermediateFrequency, ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency), resampler->lowPass);
+		if (resampler->inFrequency != resampler->intermediateFrequency) {
+			printf("\t// %d -> %d Hz (upsample 1:%d; high-pass %.2g Hz; low-pass %d Hz; downsample %d:1)\n", resampler->inFrequency, resampler->outFrequency, resampler->upSample, resampler->highPass1000 / 1000.0, resampler->lowPass, resampler->downSample);
+		} else {
+			printf("\t// High-pass %.2g Hz at %d Hz\n", resampler->highPass1000 / 1000.0, resampler->inFrequency);
+		}
+		printf("\tif (resampler->intermediateFrequency == %d * %d /*=%d*/ && resampler->highPass1000 == %d && resampler->lowPass == %d /* %d / 2 */) {\n", resampler->upSample, resampler->inFrequency, resampler->intermediateFrequency, resampler->highPass1000, resampler->lowPass, ((resampler->outFrequency < resampler->inFrequency) ? resampler->outFrequency : resampler->inFrequency));
 		printf("\t\tresampler->numCoefficients = %d;\n", resampler->numCoefficients);
 		for (int j = 0; j < resampler->numCoefficients; j++) {
 			printf("\t\tresampler->B[%d] = FILTER_FROM_FLOAT(%+.15f);", j, B[j]);
@@ -130,14 +152,18 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 			#endif
 			printf("\n");
 		}
+		printf("\t\tfilterSet = true;\n");
 		printf("\t}\n");
 #endif
-
+		filterSet = true;
+#ifdef RESAMPLER_TEST
+		printf("DEBUG: Set by calculation.\n");
+#endif
 	}
 #else
 
-	// 50 -> 30 Hz (upsample 1:3; low-pass 15 Hz; downsample 5:1)
-	if (resampler->intermediateFrequency == 3 * 50 /*=150*/ && resampler->lowPass == 30 / 2 /*=15*/) {
+	// 50 -> 30 Hz (upsample 1:3; high-pass 0 Hz; low-pass 15 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 3 * 50 /*=150*/ && resampler->highPass1000 == 0 && resampler->lowPass == 30 / 2 /*=15*/) {
 		resampler->numCoefficients = 5;
 		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
 		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
@@ -149,10 +175,11 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
 		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
 		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
+		filterSet = true;
 	}
 
-	// 100 -> 30 Hz (upsample 1:3; low-pass 15 Hz; downsample 10:1)
-	if (resampler->intermediateFrequency == 3 * 100 /*=300*/ && resampler->lowPass == 30 / 2 /*=15*/) {
+	// 100 -> 30 Hz (upsample 1:3; high-pass 0 Hz; low-pass 15 Hz; downsample 10:1)
+	if (resampler->intermediateFrequency == 3 * 100 /*=300*/ && resampler->highPass1000 == 0 && resampler->lowPass == 30 / 2 /*=15*/) {
 		resampler->numCoefficients = 5;
 		resampler->B[0] = FILTER_FROM_FLOAT(+0.000416599204407); // Fixed: +0.000366210937500
 		resampler->B[1] = FILTER_FROM_FLOAT(+0.001666396817626); // Fixed: +0.001708984375000
@@ -164,10 +191,11 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		resampler->A[2] = FILTER_FROM_FLOAT(+3.861194348994213); // Fixed: +3.861206054687500
 		resampler->A[3] = FILTER_FROM_FLOAT(-2.112155355110968); // Fixed: -2.112182617187500
 		resampler->A[4] = FILTER_FROM_FLOAT(+0.438265142261980); // Fixed: +0.438232421875000
+		filterSet = true;
 	}
 
-	// 50 -> 40 Hz (upsample 1:4; low-pass 20 Hz; downsample 5:1)
-	if (resampler->intermediateFrequency == 4 * 50 /*=200*/ && resampler->lowPass == 40 / 2 /*=20*/) {
+	// 50 -> 40 Hz (upsample 1:4; high-pass 0 Hz; low-pass 20 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 4 * 50 /*=200*/ && resampler->highPass1000 == 0 && resampler->lowPass == 40 / 2 /*=20*/) {
 		resampler->numCoefficients = 5;
 		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000
 		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
@@ -179,10 +207,11 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
 		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
 		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
+		filterSet = true;
 	}
 	
-	// 100 -> 40 Hz (upsample 1:2; low-pass 20 Hz; downsample 5:1)
-	if (resampler->intermediateFrequency == 2 * 100 /*=200*/ && resampler->lowPass == 40 / 2 /*=20*/) {
+	// 100 -> 40 Hz (upsample 1:2; high-pass 0 Hz; low-pass 20 Hz; downsample 5:1)
+	if (resampler->intermediateFrequency == 2 * 100 /*=200*/ && resampler->highPass1000 == 0 && resampler->lowPass == 40 / 2 /*=20*/) {
 		resampler->numCoefficients = 5;
 		resampler->B[0] = FILTER_FROM_FLOAT(+0.004824343357716); // Fixed: +0.004882812500000      
 		resampler->B[1] = FILTER_FROM_FLOAT(+0.019297373430865); // Fixed: +0.019287109375000
@@ -194,7 +223,9 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		resampler->A[2] = FILTER_FROM_FLOAT(+2.313988414415880); // Fixed: +2.313964843750000
 		resampler->A[3] = FILTER_FROM_FLOAT(-1.054665405878568); // Fixed: -1.054687500000000
 		resampler->A[4] = FILTER_FROM_FLOAT(+0.187379492368185); // Fixed: +0.187377929687500
+		filterSet = true;
 	}
+
 
 #endif
 
@@ -205,7 +236,7 @@ bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, i
 		}
 	}
 
-	return resampler->numCoefficients > 0;
+	return filterSet;
 }
 
 
@@ -293,7 +324,7 @@ size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t
 
 #include "wav.h"
 
-int resampler_test(const char *inFilename, const char *outFilename, int outFrequency) {
+int resampler_test(const char *inFilename, const char *outFilename, int outFrequency, int highPass1000) {
 	
 	if (inFilename == NULL || inFilename[0] == '\0') { fprintf(stderr, "ERROR: Input filename not specified.\n"); return 1; }
 	if (outFilename == NULL || outFilename[0] == '\0') { fprintf(stderr, "ERROR: Output filename not specified.\n"); return 1; }
@@ -318,6 +349,11 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 	
 	// Resampler
 	resampler_t resampler;
+	int frequency = (int)wavInfo.freq;
+	#ifdef RESAMPLER_OVERRIDE_FREQUENCY
+		frequency = RESAMPLER_OVERRIDE_FREQUENCY;
+		fprintf(stderr, "DEBUG: Overriding input frequency (to generate specific coefficients): %d Hz -> %d Hz\n", wavInfo.freq, frequency);
+	#endif
 	int chans = wavInfo.chans;
 	if (chans == 4) chans = 3; // Special-case x/y/z/aux -> x/y/z
 	if (chans > RESAMPLER_MAX_AXES) chans = RESAMPLER_MAX_AXES;
@@ -333,7 +369,7 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 	}
 
 	// Initialize the resampler
-	if (!resampler_init(&resampler, wavInfo.freq, outFrequency, chans)) {
+	if (!resampler_init(&resampler, frequency, outFrequency, highPass1000, chans)) {
 		fprintf(stderr, "ERROR: Support for specified frequencies not implemented (and RESAMPLER_CALCULATE_COEFFICIENTS not defined).\n");
 		return 1;
 	}
@@ -413,6 +449,7 @@ int resampler_test(const char *inFilename, const char *outFilename, int outFrequ
 
 int main(int argc, char *argv[]) {
 	int outFrequency = 30;
+	int highPass1000 = 0;	// assume no high-pass
 
 #if 0
 	for (int y = 0; y <= 12; y ++) {
@@ -428,9 +465,10 @@ int main(int argc, char *argv[]) {
 	const char *inFilename = NULL;
 	const char *outFilename = NULL;
 	
-	if (argc == 2) inFilename = argv[1];
-	if (argc == 3) outFilename = argv[2];
-	if (argc == 4) outFrequency = atoi(argv[3]);
+	if (argc > 1) inFilename = argv[1];
+	if (argc > 2) outFilename = argv[2];
+	if (argc > 3) outFrequency = (int)(strtod(argv[3], NULL));
+	if (argc > 4) highPass1000 = (int)(strtod(argv[4], NULL) * 1000);
 
 	if (inFilename == NULL || inFilename[0] == '\0') {
 		fprintf(stderr, "ERROR: Input filename not specified.\n");
@@ -451,7 +489,7 @@ int main(int argc, char *argv[]) {
 		outFilename = newFilename;
 	}
 
-	int returnValue = resampler_test(inFilename, outFilename, outFrequency);
+	int returnValue = resampler_test(inFilename, outFilename, outFrequency, highPass1000);
 
 	if (newFilename != NULL) free(newFilename);
 	return returnValue;

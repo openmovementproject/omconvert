@@ -13,7 +13,7 @@ extern "C" {
 #include <stdbool.h>
 
 // Config (move to `resampler-config.h`?)
-//#define RESAMPLER_CALCULATE_COEFFICIENTS	// Support generating aribtrary filters (not just a fixed set) - relies on butter.h/butter.c
+//#define RESAMPLER_CALCULATE_COEFFICIENTS	// Support generating arbitrary filters (not just a fixed set) - relies on butter.h/butter.c
 //#define RESAMPLER_FILTER_DOUBLE			// Use floating-point calculations (otherwise, fixed-point for embedded)
 #define RESAMPLER_MAX_AXES 3				// Triaxial
 typedef int16_t resampler_data_t;
@@ -57,6 +57,7 @@ typedef struct {
 
 	int inFrequency;				// Input frequency (NOTE: integer at present)
 	int outFrequency;				// Output frequency (NOTE: integer at present)
+	int highPass1000;				// High-pass frequency *1000 (also an integer to keep the interface suitable for embedding); 0=unused -- if a lowPass is also used (the input/output frequencies are mismatched), this becomes a band-pass filter
 
 	int lowPass;					// Low-pass filter frequency (NOTE: integer at present)
 	int intermediateFrequency;		// Intermediate (upsampled) frequency (NOTE: integer at present)
@@ -73,7 +74,7 @@ typedef struct {
 	int upPos;
 	int downPos;
 
-	// Filter coefficients
+	// Filter coefficients (shared between all axes)
 	filter_data_t B[RESAMPLER_MAX_COEFFICIENTS];
 	filter_data_t A[RESAMPLER_MAX_COEFFICIENTS];
 	int numCoefficients;
@@ -86,7 +87,7 @@ typedef struct {
 
 } resampler_t;
 
-bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int axes);
+bool resampler_init(resampler_t *resampler, int inFrequency, int outFrequency, int highPass1000, int axes);
 void resampler_input(resampler_t *resampler, const resampler_data_t *input, size_t countSamples);
 size_t resampler_output(resampler_t *resampler, resampler_data_t *output, size_t countSamples);
 
