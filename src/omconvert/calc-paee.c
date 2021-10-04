@@ -31,7 +31,7 @@
 Cut-point calculation
 "Validation of the GENEA Accelerometer" by Esliger et al.
 
-  SVMgs = SUM(abs(sqrt(x^2 + y^2 + z^2) � 1))
+  SVMgs = SUM(abs(sqrt(x^2 + y^2 + z^2) - 1))
 
 Where sum is for 60 seconds at 80Hz, so divide all cut-points below by 4800 to work on mean SVM-1
 
@@ -41,7 +41,7 @@ Light   	>= 1.5 METS	< 4 METS	 386	 386	 217	  77
 Moderate	>= 4.0 METS	< 7 METS	 542	 440	 645	 220	
 Vigorous	>= 7.0 METS	        	1811	2099	1811	2057	
 
-// Original SVMgs = SUM(abs(sqrt(x ^ 2 + y ^ 2 + z ^ 2) � 1)) at 80Hz (from "Validation of the GENEA Accelerometer" by Esliger et al.) so these cut-points * 1/(60*80) for average SVM
+// Original SVMgs = SUM(abs(sqrt(x ^ 2 + y ^ 2 + z ^ 2) - 1)) at 80Hz (from "Validation of the GENEA Accelerometer" by Esliger et al.) so these cut-points * 1/(60*80) for average SVM
 // Sedentary, Light (>= 1.5 METS, < 4 METS), Moderate (>= 4 METS, < 7 METS), Vigorous (>= 7 METS)
 
 'wrist':                386/80/60 542/80/60 1811/80/60
