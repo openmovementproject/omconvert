@@ -28,14 +28,11 @@ Several of the built-in analysis methods are described in more detail in [AX3-GU
 
 ### Vector Magnitude
 
-The mean acceleration vector magnitude minus static gravity (over an epoch) is a commonly-used, simple to calculate, metric.  
-Typically known as *SVM-1* (Signal Vector Magnitude, typically averaging the *absolute* value of negative numbers)*, or 
-the *ENMO* (Euclidean Norm Minus One, typically treating negative values as zero).
+The mean acceleration vector magnitude minus static gravity (over an epoch) is a commonly-used, simple to calculate, metric.  Typically known as *SVM-1* (Signal Vector Magnitude, typically averaging the *absolute* value of negative numbers)*, or the *ENMO* (Euclidean Norm Minus One, typically treating negative values as zero).
 
 A band-pass filter is typically used to remove any slight miscalibration errors.
 
-An example to produce an analysis of Signal Vector Magnitude minus one for 
-60-second epochs (the default), using a 4 Butterworth band-pass filter 0.5-20Hz.
+An example to produce an analysis of Signal Vector Magnitude minus one for 60-second epochs (the default), using a 4 Butterworth band-pass filter 0.5-20Hz.
 
 ```bash
 omconvert datafile.cwa -svm-file datafile.svm.csv -svm-epoch 60 -svm-filter 1
@@ -46,7 +43,17 @@ To use the data without a filter, use `-svm-filter 0`.
 For any interrupts, where there are no valid samples in the epoch, *NaN* can be emitted 
 for the values:  use the parameter `-svm-extended`, where 1=emit zero, 2=empty cell, 3="nan".
 
-To take the *absolute* of negative values (default) use `-svm-mode 0`; to treat negative values as *zero* use `-svm-mode 1`.
+To take the *absolute* of negative values (default) use `-svm-mode 0`, for each epoch this is:
+
+```
+SUM[ abs(sqrt(Xi^2 + Yi^2 + Zi^2) - 1) ] / count
+```
+
+...to treat negative values as *zero* use `-svm-mode 1`, for each epoch this is:
+
+```
+SUM[ max(sqrt(Xi^2 + Yi^2 + Zi^2) - 1, 0) ] / count
+```
 
 
 ### Cut-Points
