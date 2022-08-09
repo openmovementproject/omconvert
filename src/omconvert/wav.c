@@ -350,6 +350,7 @@ char WavRead(WavInfo *wavInfo, FILE *fp)
         return -1;
     }
 
+    if (error) return 0;
     return 1;
 }
 

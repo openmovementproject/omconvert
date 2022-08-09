@@ -509,7 +509,7 @@ double OmCalibrateMeanSvmError(omcalibrate_calibration_t *calibration, omcalibra
 	// Evalulate mean svm
 	int i;
 	double sumSvm = 0;
-	double sumSvmSquared = 0;
+	//double sumSvmSquared = 0;
 	for (i = 0; i < stationaryPoints->numValues; i++)
 	{
 		double temp = stationaryPoints->values[i].actualTemperature;
@@ -526,7 +526,7 @@ double OmCalibrateMeanSvmError(omcalibrate_calibration_t *calibration, omcalibra
 		// SVM
 		double svm = fabs(sqrt(values[0] * values[0] + values[1] * values[1] + values[2] * values[2]) - 1.0);
 		sumSvm += svm;
-		sumSvmSquared += svm * svm;
+		//sumSvmSquared += svm * svm;
 	}
 	double meanSvm = 0;
 	if (stationaryPoints->numValues > 0)
