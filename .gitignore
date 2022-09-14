@@ -3,3 +3,6 @@ _local
 /src/omconvert/*.cwa
 /src/omconvert/*.dbg
 .DS_Store
+src/omconvert/omconvert_arm
+src/omconvert/omconvert_universal
+src/omconvert/omconvert_x86
