@@ -3,6 +3,8 @@ SETLOCAL EnableDelayedExpansion
 PUSHD %~dp0
 
 rem If launched from anything other than cmd.exe, will have "%WINDIR%\system32\cmd.exe" in the command line
+set INTERACTIVE_BUILD=
+IF "%1"=="/NONINTERACTIVE" GOTO NONINTERACTIVE
 ECHO.%CMDCMDLINE% | FINDSTR /C:"%COMSPEC% /c" >NUL
 IF ERRORLEVEL 1 GOTO NONINTERACTIVE
 rem Preserve this as it seems to be corrupted below otherwise?!
@@ -11,8 +13,15 @@ rem If launched from anything other than cmd.exe, last character of command line
 IF NOT ^!CMDCMDLINE:~-1!==^" GOTO NONINTERACTIVE
 rem If run from Explorer, last-but-one character of command line will be a space
 IF NOT "!CMDLINE:~-2,1!"==" " GOTO NONINTERACTIVE
-SET INTERACTIVE=1
+SET INTERACTIVE_BUILD=1
 :NONINTERACTIVE
+
+::: Extract version
+set VER=
+rem for /f "tokens=3 usebackq" %%f in (`type resource.rc ^| findstr /R /C:"#define[ ]VER_MAJOR"`) do set VER=%%f
+rem for /f "tokens=3 usebackq" %%f in (`type resource.rc ^| findstr /R /C:"#define[ ]VER_MINOR"`) do set VER=%VER%.%%f
+rem for /f "tokens=3 usebackq" %%f in (`type resource.rc ^| findstr /R /C:"#define[ ]VER_BUILD"`) do set VER=%VER%.%%f
+rem for /f "tokens=3 usebackq" %%f in (`type resource.rc ^| findstr /R /C:"#define[ ]VER_REVISION"`) do set VER=%VER%.%%f
 
 SET FIND_CL=
 FOR %%p IN (cl.exe) DO SET "FIND_CL=%%~$PATH:p"
@@ -40,7 +49,7 @@ IF ERRORLEVEL 1 GOTO ERROR
 ECHO Linking...
 link %NOLOGO% /out:omconvert.exe agfilter butter calc-csv calc-paee calc-sleep calc-step calc-svm calc-wtv linearregression main omcalibrate omconvert omdata wav /subsystem:console
 IF ERRORLEVEL 1 GOTO ERROR
-ECHO Done.
+ECHO Done. %VER%
 IF DEFINED INTERACTIVE_BUILD COLOR 2F & PAUSE & COLOR
 GOTO END
 
