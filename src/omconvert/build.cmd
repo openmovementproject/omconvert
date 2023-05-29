@@ -22,10 +22,12 @@ IF DEFINED FIND_CL (
 )
 
 ECHO Build tools not on path, looking for 'vcvarsall.bat'...
-SET ARCH=x86
+rem x86 x64
+SET ARCH=x64
 SET VCVARSALL=
 FOR %%f IN (70 71 80 90 100 110 120 130 140) DO IF EXIST "!VS%%fCOMNTOOLS!\..\..\VC\vcvarsall.bat" SET VCVARSALL=!VS%%fCOMNTOOLS!\..\..\VC\vcvarsall.bat
 FOR /F "usebackq tokens=*" %%f IN (`DIR /B /ON "%ProgramFiles(x86)%\Microsoft Visual Studio\????"`) DO FOR %%g IN (BuildTools Community Professional Enterprise) DO IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\%%f\%%g\VC\Auxiliary\Build\vcvarsall.bat" SET "VCVARSALL=%ProgramFiles(x86)%\Microsoft Visual Studio\%%f\%%g\VC\Auxiliary\Build\vcvarsall.bat"
+FOR /F "usebackq tokens=*" %%f IN (`DIR /B /ON "%ProgramFiles%\Microsoft Visual Studio\????"`) DO FOR %%g IN (BuildTools Community Professional Enterprise) DO IF EXIST "%ProgramFiles%\Microsoft Visual Studio\%%f\%%g\VC\Auxiliary\Build\vcvarsall.bat" SET "VCVARSALL=%ProgramFiles%\Microsoft Visual Studio\%%f\%%g\VC\Auxiliary\Build\vcvarsall.bat"
 IF "%VCVARSALL%"=="" ECHO Cannot find C compiler environment for 'vcvarsall.bat'. & GOTO ERROR
 ECHO Setting environment variables for C compiler... %VCVARSALL%
 CALL "%VCVARSALL%" %ARCH%
@@ -39,14 +41,14 @@ ECHO Linking...
 link %NOLOGO% /out:omconvert.exe agfilter butter calc-csv calc-paee calc-sleep calc-step calc-svm calc-wtv linearregression main omcalibrate omconvert omdata wav /subsystem:console
 IF ERRORLEVEL 1 GOTO ERROR
 ECHO Done.
-IF DEFINED INTERACTIVE COLOR 2F & PAUSE & COLOR
+IF DEFINED INTERACTIVE_BUILD COLOR 2F & PAUSE & COLOR
 GOTO END
 
 :ERROR
 ECHO ERROR: An error occured.
+POPD
 IF DEFINED INTERACTIVE COLOR 4F & PAUSE & COLOR
 EXIT /B 1
-GOTO END
 
 :END
 POPD
