@@ -16,14 +16,14 @@ The conversion process can be run as follows to generate a .WAV file and informa
 ./omconvert datafile.cwa -interpolate-mode 1 -out datafile.wav -info datafile.yml
 ```
 
-Where `-interpolate-mode 1` selectes nearest-neighbour, `2` for linear interpolation, `3` for cubic interpolation.
+Where `-interpolate-mode 1` selects nearest-neighbour, `2` for linear interpolation, `3` for cubic interpolation.
 
 The following sections describe the technical detail of these .WAV and informational metadata files.
 
 
 ## WAV file
 
-The output `.wav` file uses the standard (for audio files) [.WAV file format](https://en.wikipedia.org/wiki/WAV) -- and there is plenty of documentation available for that format: [Audio File Format Specifications](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html), [WAVE PCM soundfile format](http://soundfile.sapp.org/doc/WaveFormat/).
+The output `.wav` file uses the standard (for audio files) [.WAV file format](https://en.wikipedia.org/wiki/WAV) -- and there is plenty of documentation available for that format: [Audio File Format Specifications](http://www-mmsp.ece.mcgill.ca/Documents/AudioFormats/WAVE/WAVE.html), [WAVE PCM sound file format](http://soundfile.sapp.org/doc/WaveFormat/).
 
 The output file contains four channels: the first three are for the X-/Y-/Z-axes respectively, and the fourth contains auxiliary data which can typically be ignored.  The format uses signed 16-bit values (values from -32768 to +32767) -- this is typically normalized to the -1 to +1 range, and then scaled by the channel scaling (which will be 8 for the +/-2, 4 or 8*g* range; and 16 for the +/-16*g* range -- where 1*g* is 9.81m/s/s).
 
