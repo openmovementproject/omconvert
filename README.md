@@ -4,7 +4,7 @@
 
 A pre-built binary for Windows is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  Alternatively, if you have installed *OM-GUI*, you should find it at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`.  
 
-Alternatively, on Windows, you can build an `omconvert.exe` binary in the current directory (Visual Studio, or the [Build Tools for Visual Studio](https://aka.ms/buildtools) required) with:
+Alternatively, on Windows, you can build an `omconvert.exe` binary in the current directory (Visual Studio, or the [Build Tools for Visual Studio](https://aka.ms/buildtools) / *All Downloads* / *Tools for Visual Studio* / *Build Tools for Visual Studio* required) with:
 
 ```cmd
 powershell -Command "& {Invoke-WebRequest https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build.zip ; Expand-Archive omconvert.build.zip ; del omconvert.build.zip ; omconvert.build/omconvert-master/src/omconvert/build.cmd ; copy omconvert.build/omconvert-master/src/omconvert/omconvert.exe . }"
