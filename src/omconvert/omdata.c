@@ -717,7 +717,7 @@ static int OmDataAddSector(omdata_t *omdata, int sectorIndex)
 		description.packing = 0;
 		description.channels = 3;
 		description.scaling = 1;
-		description.sampleRate = (description.sampleRate != 0) ? maxValues / (int)description.sampleRate : 1;		// One sample per sector // samplesPerSector
+		description.sampleRate = 1 * description.sampleRate / description.samplesPerSector;
 		description.samplesPerSector = 1;
 		OmDataAddSubSector(omdata, sectorIndex, streamIndex, sequenceId, &description);
 	}
@@ -1048,6 +1048,7 @@ static int OmDataCalculateSessions(omdata_t *omdata, double sessionOverlap)
 	// Find the sessions from the streams
 	for (pass = 0;; pass++)
 	{
+		(void)pass; // unused
 		// Check each stream
 		int streamIndex;
 		int nextSmallestIndex = -1;
