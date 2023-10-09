@@ -44,7 +44,7 @@ CALL "%VCVARSALL%" %ARCH%
 :BUILD
 SET NOLOGO=/nologo
 ECHO Compiling...
-cl %NOLOGO% -c /EHsc /Tc"agfilter.c" /Tc"butter.c" /Tc"calc-csv.c" /Tc"calc-paee.c" /Tc"calc-sleep.c" /Tc"calc-step.c" /Tc"calc-svm.c" /Tc"calc-wtv.c" /Tc"linearregression.c" /Tc"main.c" /Tc"omcalibrate.c" /Tc"omconvert.c" /Tc"omdata.c" /Tc"wav.c"
+cl %NOLOGO% -c /EHsc /O2 /Tc"agfilter.c" /Tc"butter.c" /Tc"calc-csv.c" /Tc"calc-paee.c" /Tc"calc-sleep.c" /Tc"calc-step.c" /Tc"calc-svm.c" /Tc"calc-wtv.c" /Tc"linearregression.c" /Tc"main.c" /Tc"omcalibrate.c" /Tc"omconvert.c" /Tc"omdata.c" /Tc"wav.c"
 IF ERRORLEVEL 1 GOTO ERROR
 ECHO Linking...
 link %NOLOGO% /out:omconvert.exe agfilter butter calc-csv calc-paee calc-sleep calc-step calc-svm calc-wtv linearregression main omcalibrate omconvert omdata wav /subsystem:console
