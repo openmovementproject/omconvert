@@ -2,7 +2,11 @@
 
 ## Obtaining the binary
 
+### Binary (Windows)
+
 A pre-built binary for Windows is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  Alternatively, if you have installed *OM-GUI*, you should find it at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`.  
+
+### Build (Windows)
 
 Alternatively, on Windows, you can build an `omconvert.exe` binary in the current directory.  You will need *Visual Studio*, or the [Build Tools for Visual Studio](https://aka.ms/buildtools) (*All Downloads* / *Tools for Visual Studio* / *Build Tools for Visual Studio*).  <!-- Ensure you have the compilers installed: *Individual Components* / *Compilers, build tools, and runtimes* / *MSVC v143 - VS 2022 C++ x64/x86 build tools (Latest)* and *MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)*. --> Build with:
 
@@ -10,14 +14,17 @@ Alternatively, on Windows, you can build an `omconvert.exe` binary in the curren
 powershell -Command "& {Invoke-WebRequest https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build.zip ; Expand-Archive omconvert.build.zip ; del omconvert.build.zip ; omconvert.build/omconvert-master/src/omconvert/build.cmd ; copy omconvert.build/omconvert-master/src/omconvert/omconvert.exe . }"
 ```
 
-On other operating systems, such as Mac (*XCode* required), Linux or WSL, you can use this single line command to build an `omconvert` binary in the current directory:
+Alternatively, you can clone this repository and run: `src/omconvert/build.cmd`
+
+### Build (Non-Windows)
+
+On other operating systems, such as Mac (*XCode* required), Linux, or WSL, you can use this single line command to build an `omconvert` binary in the current directory:
 
 ```bash
 mkdir omconvert.build && curl -L https://github.com/digitalinteraction/omconvert/archive/master.zip -o omconvert.build/master.zip && unzip omconvert.build/master.zip -d omconvert.build && make -C omconvert.build/omconvert-master/src/omconvert && cp omconvert.build/omconvert-master/src/omconvert/omconvert .
 ```
 
-Alternatively, you can clone this repository and, on Windows, run `src/omconvert/build.cmd`, or, on other operating systems, `make -C src/omconvert`.
-
+Alternatively, you can clone this repository and run: `make -C src/omconvert`
 
 ## Analysis methods
 
