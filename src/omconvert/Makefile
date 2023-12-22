@@ -1,10 +1,12 @@
 # make USER_DEFINES="-DNO_MMAP=1"
 
-BIN_NAME = omconvert
-CC = gcc
+BIN_NAME ?= omconvert
+CC ?= gcc
 CFLAGS = -std=c99 -O3 -Wall -ffast-math
-INC_PATH = -I/usr/local/include
-LIB_PATH = -L/usr/local/lib 
+INC_PATH = 
+#-I/usr/local/include
+LIB_PATH = 
+#-L/usr/local/lib 
 LIBS = -lm -lpthread
 
 SRC = $(wildcard *.c)

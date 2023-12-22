@@ -6,3 +6,5 @@ _local
 src/omconvert/omconvert_arm
 src/omconvert/omconvert_universal
 src/omconvert/omconvert_x86
+src/omconvert/omconvert.*.elf
+src/omconvert/omconvert.com

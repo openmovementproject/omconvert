@@ -18,7 +18,7 @@
 int CoefficientsButterworth(int order, double W1, double W2, double *B, double *A)
 {
 	int i, j;
-	int tcof[BUTTERWORTH_MAX_ORDER + 1];
+	int tcof[BUTTERWORTH_MAX_ORDER + 1] = {0};
 
 	// Pass-through filter
 	if (W1 <= 0.0 && W2 <= 0.0)
