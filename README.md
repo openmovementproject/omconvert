@@ -1,10 +1,17 @@
 # Open Movement file converter
 
-## Obtaining the binary
+## Obtaining the program
 
-### Binary (Windows)
+### Binary Executable
 
-A pre-built binary for Windows is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  Alternatively, if you have installed *OM-GUI*, you should find it at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`.  
+* An experimental cross-platform build of the binary is available under [Releases](https://github.com/digitalinteraction/omconvert/releases).  
+
+* For Windows, a pre-built binary is available at: [OpenMovement GitHub](https://github.com/digitalinteraction/openmovement/blob/master/Downloads/AX3/AX3-Utils-Win-3.zip?raw=true).  
+
+* On Windows, if you have [Om-GUI](https://github.com/digitalinteraction/openmovement/wiki/AX3-GUI) installed, you should have a copy of the binary at: `"%ProgramFiles(x86)%\Open Movement\OM GUI\Plugins\OmConvertPlugin\omconvert.exe"`
+
+* Alternatively, you can build your own binary with the following instructions.
+
 
 ### Build (Windows)
 
@@ -16,6 +23,7 @@ powershell -Command "& {Invoke-WebRequest https://github.com/digitalinteraction/
 
 Alternatively, you can clone this repository and run: `src/omconvert/build.cmd`
 
+
 ### Build (Non-Windows)
 
 On other operating systems, such as Mac (*XCode* required), Linux, or WSL, you can use this single line command to build an `omconvert` binary in the current directory:
@@ -25,6 +33,7 @@ mkdir omconvert.build && curl -L https://github.com/digitalinteraction/omconvert
 ```
 
 Alternatively, you can clone this repository and run: `make -C src/omconvert`
+
 
 ## Analysis methods
 
